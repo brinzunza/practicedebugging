@@ -44,6 +44,19 @@ export function getDatabase() {
   }
 }
 
+export function clearDatabase() {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.QUESTIONS)
+    localStorage.removeItem(STORAGE_KEYS.PROGRESS)
+    localStorage.removeItem(STORAGE_KEYS.STATS)
+    console.log('Database cleared successfully')
+    return true
+  } catch (error) {
+    console.error('Failed to clear database:', error)
+    return false
+  }
+}
+
 export function closeDatabase() {
   // No-op for localStorage
 }

@@ -19,16 +19,20 @@ export default function ConsoleOutput({ output, isError = false }) {
         </h3>
       </div>
       
-      <div 
+      <div
         className="brutal-card"
-        style={{ 
+        style={{
           backgroundColor: 'var(--bg-primary)',
           fontFamily: 'JetBrains Mono, monospace',
           fontSize: '13px',
           minHeight: '120px',
+          maxHeight: '300px',
           color: isError ? 'var(--accent-primary)' : 'var(--accent-secondary)',
           whiteSpace: 'pre-wrap',
-          overflow: 'auto'
+          wordWrap: 'break-word',
+          wordBreak: 'break-all',
+          overflow: 'auto',
+          overflowWrap: 'break-word'
         }}
       >
         {output ? formatOutput(output) : (

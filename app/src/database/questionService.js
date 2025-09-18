@@ -125,11 +125,31 @@ export class QuestionService {
     }
   }
 
+  forceReseed() {
+    try {
+      this.db.setQuestions([]);
+      this.db.setProgress([]);
+      this.seedSampleQuestions();
+      console.log('Database reseeded successfully');
+      return true;
+    } catch (error) {
+      console.error('Failed to reseed database:', error);
+      return false;
+    }
+  }
+
   seedSampleQuestions() {
     const questions = this.db.questions();
+    console.log('Current questions count:', questions.length);
+
+    // Uncomment the next line to force reseeding if needed
+    // this.db.setQuestions([]);
+
     if (questions.length > 0) {
       return; // Already seeded
     }
+
+    console.log('Starting seeding process...');
     
     const sampleQuestions = [
       // EASY DIFFICULTY QUESTIONS
@@ -266,25 +286,25 @@ KeyError: 'charlie'`,
         description: "This Java method has an array index out of bounds error.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class ArrayProcessor {
+        buggy_code: `public class Main {
     public static void printArray(int[] arr) {
         for (int i = 0; i <= arr.length; i++) {
             System.out.println(arr[i]);
         }
     }
-    
+
     public static void main(String[] args) {
         int[] numbers = {1, 2, 3};
         printArray(numbers);
     }
 }`,
-        fixed_code: `public class ArrayProcessor {
+        fixed_code: `public class Main {
     public static void printArray(int[] arr) {
         for (int i = 0; i < arr.length; i++) {
             System.out.println(arr[i]);
         }
     }
-    
+
     public static void main(String[] args) {
         int[] numbers = {1, 2, 3};
         printArray(numbers);
@@ -307,23 +327,23 @@ Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out
         description: "This Java string comparison doesn't work correctly.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class StringChecker {
+        buggy_code: `public class Main {
     public static boolean isValidPassword(String password) {
         String correctPassword = "password123";
         return password == correctPassword;
     }
-    
+
     public static void main(String[] args) {
         System.out.println(isValidPassword("password123"));
         System.out.println(isValidPassword("wrong"));
     }
 }`,
-        fixed_code: `public class StringChecker {
+        fixed_code: `public class Main {
     public static boolean isValidPassword(String password) {
         String correctPassword = "password123";
         return password.equals(correctPassword);
     }
-    
+
     public static void main(String[] args) {
         System.out.println(isValidPassword("password123"));
         System.out.println(isValidPassword("wrong"));
@@ -342,7 +362,7 @@ false`,
         description: "This Java code has a syntax error.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Calculator {
+        buggy_code: `public class Main {
     public static int add(int a, int b) {
         int result = a + b
         return result;
@@ -352,7 +372,7 @@ false`,
         System.out.println(add(5, 3));
     }
 }`,
-        fixed_code: `public class Calculator {
+        fixed_code: `public class Main {
     public static int add(int a, int b) {
         int result = a + b;
         return result;
@@ -373,7 +393,7 @@ false`,
         description: "This calculator gives incorrect results for division.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Calculator {
+        buggy_code: `public class Main {
     public static double divide(int a, int b) {
         return a / b;
     }
@@ -383,7 +403,7 @@ false`,
         System.out.println(divide(7, 3));
     }
 }`,
-        fixed_code: `public class Calculator {
+        fixed_code: `public class Main {
     public static double divide(int a, int b) {
         return (double) a / b;
     }
@@ -405,50 +425,123 @@ false`,
       // SQL Easy Questions
       {
         title: "Missing WHERE Clause",
-        description: "This SQL query accidentally deletes all records.",
+        description: "This SQL query selects all users instead of just inactive ones.",
         difficulty: "easy",
         language: "sql",
-        buggy_code: `DELETE FROM users;`,
-        fixed_code: `DELETE FROM users WHERE active = 0;`,
-        console_output: `All records deleted!`,
-        expected_output: `Only inactive users deleted`,
+        buggy_code: `SELECT user_name, email_address FROM users;`,
+        fixed_code: `SELECT user_name, email_address FROM users WHERE active = 0;`,
+        console_output: `user_name     | email_address
+john_doe      | john@example.com
+jane_smith    | jane@example.com
+bob_johnson   | bob@example.com
+alice_brown   | alice@example.com
+charlie_wilson| charlie@example.com
+
+(5 rows)`,
+        expected_output: `user_name     | email_address
+bob_johnson   | bob@example.com
+charlie_wilson| charlie@example.com
+
+(2 rows)`,
         explanation: "Missing WHERE Clause Error - DELETE without WHERE clause removes all rows. Always specify conditions to avoid accidental data loss.",
         hints: "What happens when you run DELETE without WHERE? How can you specify which rows to delete?",
-        tags: "delete,where-clause,data-safety"
+        tags: "delete,where-clause,data-safety",
+        table_schema: `TABLE: users
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ user_id     │ INT          │ Primary key     │
+│ user_name   │ VARCHAR(50)  │ Username        │
+│ email       │ VARCHAR(100) │ Email address   │
+│ active      │ TINYINT      │ 1=active, 0=inactive │
+│ created_date│ DATETIME     │ Account creation │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+user_id | user_name | email           | active | created_date
+1       | john_doe  | john@email.com  | 1      | 2024-01-15
+2       | jane_doe  | jane@email.com  | 0      | 2024-01-20
+3       | bob_smith | bob@email.com   | 1      | 2024-01-25`
       },
       {
         title: "SQL Column Not Found",
         description: "This query references a non-existent column.",
         difficulty: "easy",
         language: "sql",
-        buggy_code: `SELECT user_name, email_address, created_date 
-FROM users 
+        buggy_code: `SELECT user_name, email_address, created_date
+FROM users
 ORDER BY creation_date;`,
-        fixed_code: `SELECT user_name, email_address, created_date 
-FROM users 
+        fixed_code: `SELECT user_name, email_address, created_date
+FROM users
 ORDER BY created_date;`,
-        console_output: `ERROR: column "creation_date" does not exist`,
-        expected_output: `Results sorted by created_date`,
+        console_output: `SQL Error: no such column: creation_date`,
+        expected_output: `user_name     | email_address        | created_date
+john_doe      | john@example.com     | 2023-01-15
+jane_smith    | jane@example.com     | 2023-02-20
+bob_johnson   | bob@example.com      | 2023-03-10
+alice_brown   | alice@example.com    | 2023-04-05
+charlie_wilson| charlie@example.com  | 2023-05-12
+
+(5 rows)`,
         explanation: "Column Name Error - The column is named 'created_date' not 'creation_date'. Check column names in your table schema.",
         hints: "Double-check your column names. Are you using the exact name from the table?",
-        tags: "columns,naming,schema"
+        tags: "columns,naming,schema",
+        table_schema: `TABLE: users
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ user_id     │ INT          │ Primary key     │
+│ user_name   │ VARCHAR(50)  │ Username        │
+│ email_address│ VARCHAR(100)│ Email address   │
+│ created_date│ DATETIME     │ Account creation │
+│ active      │ TINYINT      │ 1=active, 0=inactive │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+user_id | user_name | email_address      | created_date        | active
+1       | alice     | alice@company.com  | 2024-01-15 10:30:00 | 1
+2       | bob       | bob@company.com    | 2024-01-20 14:15:00 | 1
+3       | charlie   | charlie@company.com| 2024-01-25 09:45:00 | 0`
       },
       {
         title: "GROUP BY Missing Column",
         description: "This query violates GROUP BY rules.",
         difficulty: "easy",
         language: "sql",
-        buggy_code: `SELECT department, employee_name, COUNT(*) 
-FROM employees 
+        buggy_code: `SELECT department, name, COUNT(*)
+FROM employees
 GROUP BY department;`,
         fixed_code: `SELECT department, COUNT(*) as employee_count
-FROM employees 
+FROM employees
 GROUP BY department;`,
-        console_output: `ERROR: column "employee_name" must appear in GROUP BY clause`,
-        expected_output: `Department counts displayed`,
+        console_output: `SQL Error: column "name" must appear in GROUP BY clause or be used in an aggregate function`,
+        expected_output: `department | employee_count
+IT         | 3
+Sales      | 2
+HR         | 1
+
+(3 rows)`,
         explanation: "GROUP BY Error - All non-aggregate columns in SELECT must be in GROUP BY clause. Remove employee_name or add it to GROUP BY.",
         hints: "What columns can you SELECT when using GROUP BY? Which columns need aggregation functions?",
-        tags: "group-by,aggregation,sql-rules"
+        tags: "group-by,aggregation,sql-rules",
+        table_schema: `TABLE: employees
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ employee_id │ INT          │ Primary key     │
+│ employee_name│ VARCHAR(50) │ Full name       │
+│ department  │ VARCHAR(30)  │ Department name │
+│ salary      │ DECIMAL(10,2)│ Annual salary   │
+│ hire_date   │ DATE         │ Date hired      │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+employee_id | employee_name | department | salary  | hire_date
+1          | John Smith    | IT         | 75000   | 2023-01-15
+2          | Jane Doe      | HR         | 65000   | 2023-02-20
+3          | Bob Johnson   | IT         | 80000   | 2023-03-10
+4          | Alice Brown   | Finance    | 70000   | 2023-04-05
+5          | Charlie Wilson| IT         | 78000   | 2023-05-12`
       },
 
       // MEDIUM DIFFICULTY QUESTIONS
@@ -548,7 +641,7 @@ Bob transactions: [50]`,
         description: "This Integer operation throws unexpected NullPointerException.",
         difficulty: "medium",
         language: "java",
-        buggy_code: `public class AutoboxingIssue {
+        buggy_code: `public class Main {
     public static void main(String[] args) {
         Integer a = null;
         Integer b = 5;
@@ -556,7 +649,7 @@ Bob transactions: [50]`,
         System.out.println(result);
     }
 }`,
-        fixed_code: `public class AutoboxingIssue {
+        fixed_code: `public class Main {
     public static void main(String[] args) {
         Integer a = null;
         Integer b = 5;
@@ -581,7 +674,7 @@ Bob transactions: [50]`,
         language: "java",
         buggy_code: `import java.util.*;
 
-public class LoopModification {
+public class Main {
     public static void main(String[] args) {
         List<String> list = new ArrayList<>();
         list.add("apple");
@@ -599,7 +692,7 @@ public class LoopModification {
 }`,
         fixed_code: `import java.util.*;
 
-public class LoopModification {
+public class Main {
     public static void main(String[] args) {
         List<String> list = new ArrayList<>();
         list.add("apple");
@@ -630,10 +723,8 @@ public class LoopModification {
         description: "This query is vulnerable to SQL injection attacks.",
         difficulty: "medium",
         language: "sql",
-        buggy_code: `-- Java code building SQL query
-String query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";`,
-        fixed_code: `-- Use parameterized queries instead
-String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+        buggy_code: `String query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";`,
+        fixed_code: `String query = "SELECT * FROM users WHERE username = ? AND password = ?";
 PreparedStatement stmt = connection.prepareStatement(query);
 stmt.setString(1, username);
 stmt.setString(2, password);`,
@@ -641,7 +732,24 @@ stmt.setString(2, password);`,
         expected_output: `Safe parameterized query execution`,
         explanation: "SQL Injection Vulnerability - String concatenation allows malicious input to alter query structure. Use parameterized queries with placeholders.",
         hints: "Why is string concatenation dangerous in SQL? How do parameterized queries prevent injection?",
-        tags: "security,sql-injection,parameterized-queries"
+        tags: "security,sql-injection,parameterized-queries",
+        table_schema: `TABLE: users
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ user_id     │ INT          │ Primary key     │
+│ username    │ VARCHAR(50)  │ Login username  │
+│ password    │ VARCHAR(255) │ Hashed password │
+│ email       │ VARCHAR(100) │ Email address   │
+│ role        │ VARCHAR(20)  │ User role       │
+│ created_at  │ TIMESTAMP    │ Account creation│
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+user_id | username | password      | email           | role  | created_at
+1       | admin    | $2y$10$hash1 | admin@site.com  | admin | 2024-01-01
+2       | user1    | $2y$10$hash2 | user1@site.com  | user  | 2024-01-15
+3       | user2    | $2y$10$hash3 | user2@site.com  | user  | 2024-01-20`
       },
       {
         title: "Ambiguous Column Reference",
@@ -660,7 +768,37 @@ WHERE u.user_id = 123;`,
         expected_output: `User and order data for user ID 123`,
         explanation: "Ambiguous Column Error - Both tables have user_id column. Use table aliases to specify which column you mean.",
         hints: "When joining tables with similar column names, how do you specify which table's column you want?",
-        tags: "joins,aliases,ambiguous-columns"
+        tags: "joins,aliases,ambiguous-columns",
+        table_schema: `TABLE: users
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ user_id     │ INT          │ Primary key     │
+│ name        │ VARCHAR(50)  │ Full name       │
+│ email       │ VARCHAR(100) │ Email address   │
+│ city        │ VARCHAR(50)  │ User's city     │
+└─────────────┴──────────────┴─────────────────┘
+
+TABLE: orders
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ order_id    │ INT          │ Primary key     │
+│ user_id     │ INT          │ Foreign key     │
+│ order_date  │ DATE         │ Order date      │
+│ total_amount│ DECIMAL(10,2)│ Order total     │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+users:
+user_id | name      | email           | city
+123     | John Doe  | john@email.com  | Seattle
+124     | Jane Smith| jane@email.com  | Portland
+
+orders:
+order_id | user_id | order_date | total_amount
+1001     | 123     | 2024-01-15 | 99.99
+1002     | 123     | 2024-01-20 | 149.50`
       },
 
       // HARD DIFFICULTY QUESTIONS
@@ -752,7 +890,7 @@ for func in functions:
         language: "java",
         buggy_code: `import java.util.*;
 
-public class TypeErasure {
+public class Main {
     public static <T> boolean isInstanceOf(Object obj, Class<T> clazz) {
         return obj instanceof T;  // Won't compile
     }
@@ -764,7 +902,7 @@ public class TypeErasure {
 }`,
         fixed_code: `import java.util.*;
 
-public class TypeErasure {
+public class Main {
     public static <T> boolean isInstanceOf(Object obj, Class<T> clazz) {
         return clazz.isInstance(obj);
     }
@@ -791,9 +929,9 @@ public class TypeErasure {
     SELECT employee_id, name, manager_id, 1 as level
     FROM employees
     WHERE manager_id IS NULL
-    
+
     UNION ALL
-    
+
     SELECT e.employee_id, e.name, e.manager_id, eh.level + 1
     FROM employees e
     JOIN employee_hierarchy eh ON e.manager_id = eh.employee_id
@@ -803,9 +941,9 @@ SELECT * FROM employee_hierarchy;`,
     SELECT employee_id, name, manager_id, 1 as level
     FROM employees
     WHERE manager_id IS NULL
-    
+
     UNION ALL
-    
+
     SELECT e.employee_id, e.name, e.manager_id, eh.level + 1
     FROM employees e
     JOIN employee_hierarchy eh ON e.manager_id = eh.employee_id
@@ -816,21 +954,41 @@ SELECT * FROM employee_hierarchy;`,
         expected_output: `Employee hierarchy up to 10 levels deep`,
         explanation: "Recursive CTE Infinite Loop - Without termination condition, recursive queries can run forever. Add level limit or other stopping conditions.",
         hints: "How do you prevent infinite recursion in CTEs? What conditions should stop the recursion?",
-        tags: "cte,recursion,infinite-loop,termination"
+        tags: "cte,recursion,infinite-loop,termination",
+        table_schema: `TABLE: employees
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ employee_id │ INT          │ Primary key     │
+│ name        │ VARCHAR(50)  │ Employee name   │
+│ manager_id  │ INT          │ Manager's ID    │
+│ department  │ VARCHAR(30)  │ Department      │
+│ title       │ VARCHAR(50)  │ Job title       │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data (Organizational Hierarchy):
+employee_id | name          | manager_id | department | title
+1          | John CEO      | NULL       | Executive  | CEO
+2          | Jane VP       | 1          | Operations | VP Operations
+3          | Bob VP        | 1          | Sales      | VP Sales
+4          | Alice Manager | 2          | Operations | Manager
+5          | Charlie Lead  | 4          | Operations | Team Lead
+6          | David Worker  | 5          | Operations | Developer
+7          | Eve Worker    | 5          | Operations | Developer`
       },
       {
         title: "Window Function Partitioning Error",
         description: "This window function has incorrect partitioning logic.",
         difficulty: "hard",
         language: "sql",
-        buggy_code: `SELECT 
+        buggy_code: `SELECT
     employee_id,
     name,
     salary,
     department,
     ROW_NUMBER() OVER (ORDER BY salary DESC) as salary_rank
 FROM employees;`,
-        fixed_code: `SELECT 
+        fixed_code: `SELECT
     employee_id,
     name,
     salary,
@@ -841,7 +999,289 @@ FROM employees;`,
         expected_output: `Salary ranking within each department`,
         explanation: "Window Function Partitioning Error - Missing PARTITION BY clause ranks across entire dataset. Add PARTITION BY to rank within groups.",
         hints: "What's the difference between ranking globally vs within groups? When do you need PARTITION BY?",
-        tags: "window-functions,partitioning,ranking,grouping"
+        tags: "window-functions,partitioning,ranking,grouping",
+        table_schema: `TABLE: employees
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ employee_id │ INT          │ Primary key     │
+│ name        │ VARCHAR(50)  │ Employee name   │
+│ salary      │ DECIMAL(10,2)│ Annual salary   │
+│ department  │ VARCHAR(30)  │ Department name │
+│ hire_date   │ DATE         │ Date hired      │
+│ position    │ VARCHAR(50)  │ Job position    │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+employee_id | name        | salary  | department | hire_date  | position
+1          | Alice Chen  | 95000   | Engineering| 2023-01-15 | Senior Dev
+2          | Bob Johnson | 87000   | Engineering| 2023-02-01 | Developer
+3          | Carol Smith | 92000   | Engineering| 2023-03-10 | Developer
+4          | David Brown | 78000   | Marketing  | 2023-01-20 | Manager
+5          | Eve Wilson  | 65000   | Marketing  | 2023-04-15 | Coordinator
+6          | Frank Lee   | 71000   | Marketing  | 2023-05-01 | Specialist`
+      },
+
+      // Additional SQL Easy Questions
+      {
+        title: "COUNT vs COUNT(*) Error",
+        description: "This query incorrectly counts NULL values.",
+        difficulty: "easy",
+        language: "sql",
+        buggy_code: `SELECT department, COUNT(manager_id) as total_employees
+FROM employees
+GROUP BY department;`,
+        fixed_code: `SELECT department, COUNT(*) as total_employees
+FROM employees
+GROUP BY department;`,
+        console_output: `department | total_employees
+IT         | 2
+Sales      | 1
+HR         | 0
+
+(3 rows)`,
+        expected_output: `department | total_employees
+IT         | 3
+Sales      | 2
+HR         | 1
+
+(3 rows)`,
+        explanation: "COUNT vs COUNT(*) Error - COUNT(column) ignores NULL values, while COUNT(*) counts all rows including those with NULL values.",
+        hints: "What's the difference between COUNT(column) and COUNT(*)? When might a column have NULL values?",
+        tags: "count,aggregate,null-values",
+        table_schema: `TABLE: employees
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ employee_id │ INT          │ Primary key     │
+│ name        │ VARCHAR(50)  │ Employee name   │
+│ department  │ VARCHAR(30)  │ Department name │
+│ manager_id  │ INT          │ Manager ID (NULL for top level) │
+│ salary      │ DECIMAL(10,2)│ Annual salary   │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+employee_id | name      | department | manager_id | salary
+1          | John CEO  | Executive  | NULL       | 150000
+2          | Jane VP   | Sales      | 1          | 120000
+3          | Bob Mgr   | Sales      | 2          | 80000
+4          | Alice Dev | IT         | NULL       | 75000`
+      },
+
+      {
+        title: "HAVING vs WHERE Confusion",
+        description: "This query incorrectly uses WHERE with aggregate functions.",
+        difficulty: "easy",
+        language: "sql",
+        buggy_code: `SELECT department, AVG(salary) as avg_salary
+FROM employees
+GROUP BY department
+WHERE AVG(salary) > 70000;`,
+        fixed_code: `SELECT department, AVG(salary) as avg_salary
+FROM employees
+GROUP BY department
+HAVING AVG(salary) > 70000;`,
+        console_output: `SQL Error: misuse of aggregate: AVG()`,
+        expected_output: `department | avg_salary
+IT         | 80000.0
+HR         | 70000.0
+
+(2 rows)`,
+        explanation: "HAVING vs WHERE Error - Use WHERE to filter rows before grouping, use HAVING to filter groups after aggregation.",
+        hints: "When do you use WHERE vs HAVING? Can aggregate functions appear in WHERE clauses?",
+        tags: "having,where,aggregation,group-by",
+        table_schema: `TABLE: employees
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ employee_id │ INT          │ Primary key     │
+│ name        │ VARCHAR(50)  │ Employee name   │
+│ department  │ VARCHAR(30)  │ Department name │
+│ salary      │ DECIMAL(10,2)│ Annual salary   │
+│ hire_date   │ DATE         │ Date hired      │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+employee_id | name        | department | salary  | hire_date
+1          | Alice       | IT         | 75000   | 2023-01-15
+2          | Bob         | IT         | 80000   | 2023-02-01
+3          | Carol       | Sales      | 65000   | 2023-03-10
+4          | David       | Sales      | 60000   | 2023-01-20
+5          | Eve         | HR         | 55000   | 2023-04-15`
+      },
+
+      // Additional SQL Medium Questions
+      {
+        title: "Cartesian Product in JOIN",
+        description: "This query creates an unintended cartesian product.",
+        difficulty: "medium",
+        language: "sql",
+        buggy_code: `SELECT u.name, p.title, p.price
+FROM users u, products p
+WHERE u.active = 1;`,
+        fixed_code: `SELECT u.name, p.title, p.price
+FROM users u
+JOIN user_purchases up ON u.id = up.user_id
+JOIN products p ON up.product_id = p.id
+WHERE u.active = 1;`,
+        console_output: `name     | title    | price
+John Doe | Laptop   | 999.99
+John Doe | Mouse    | 29.99
+John Doe | Keyboard | 79.99
+Jane Smith| Laptop   | 999.99
+Jane Smith| Mouse    | 29.99
+Jane Smith| Keyboard | 79.99
+
+(6 rows)`,
+        expected_output: `name     | title    | price
+John Doe | Laptop   | 999.99
+John Doe | Mouse    | 29.99
+Jane Smith| Keyboard | 79.99
+
+(3 rows)`,
+        explanation: "Cartesian Product Error - Missing JOIN conditions creates every possible combination of rows. Always specify how tables should be joined.",
+        hints: "What happens when you don't specify JOIN conditions? How many rows would you get with 1000 users and 1000 products?",
+        tags: "joins,cartesian-product,performance",
+        table_schema: `TABLE: users
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ user_id     │ INT          │ Primary key     │
+│ name        │ VARCHAR(50)  │ User name       │
+│ active      │ TINYINT      │ 1=active, 0=inactive │
+└─────────────┴──────────────┴─────────────────┘
+
+TABLE: products
+┌─────────────┬──────────────┬─────────────────┐
+│ Column      │ Type         │ Description     │
+├─────────────┼──────────────┼─────────────────┤
+│ product_id  │ INT          │ Primary key     │
+│ title       │ VARCHAR(100) │ Product name    │
+│ price       │ DECIMAL(10,2)│ Product price   │
+└─────────────┴──────────────┴─────────────────┘
+
+Sample Data:
+users: 1000 active users
+products: 500 different products
+Expected result: Only products in actual orders`
+      },
+
+      // C Programming Questions
+      {
+        title: "Buffer Overflow",
+        description: "This C program has a buffer overflow vulnerability.",
+        difficulty: "medium",
+        language: "c",
+        buggy_code: `#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char buffer[10];
+    char input[] = "This string is way too long for the buffer";
+    strcpy(buffer, input);
+    printf("Buffer: %s\\n", buffer);
+    return 0;
+}`,
+        fixed_code: `#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char buffer[50];
+    char input[] = "This string is way too long for the buffer";
+    strncpy(buffer, input, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\\0';
+    printf("Buffer: %s\\n", buffer);
+    return 0;
+}`,
+        console_output: `Segmentation fault or undefined behavior`,
+        expected_output: `Buffer: This string is way too long for the buffer`,
+        explanation: "Buffer Overflow Error - strcpy() doesn't check buffer bounds. Use strncpy() and ensure null termination, or allocate sufficient buffer space.",
+        hints: "What happens when you copy more data than a buffer can hold? How can you safely copy strings in C?",
+        tags: "buffer-overflow,strcpy,memory-safety"
+      },
+
+      {
+        title: "Pointer Arithmetic Error",
+        description: "This C program has incorrect pointer arithmetic.",
+        difficulty: "medium",
+        language: "c",
+        buggy_code: `#include <stdio.h>
+
+int main() {
+    int arr[] = {10, 20, 30, 40, 50};
+    int *ptr = arr;
+    for (int i = 0; i <= 5; i++) {
+        printf("%d ", *ptr);
+        ptr++;
+    }
+    return 0;
+}`,
+        fixed_code: `#include <stdio.h>
+
+int main() {
+    int arr[] = {10, 20, 30, 40, 50};
+    int *ptr = arr;
+    for (int i = 0; i < 5; i++) {
+        printf("%d ", *ptr);
+        ptr++;
+    }
+    return 0;
+}`,
+        console_output: `10 20 30 40 50 (garbage value or segfault)`,
+        expected_output: `10 20 30 40 50`,
+        explanation: "Array Bounds Error - Loop condition <= 5 accesses 6 elements in a 5-element array. Use < 5 to stay within bounds.",
+        hints: "How many elements are in the array? What's the highest valid index?",
+        tags: "arrays,pointers,bounds-checking"
+      },
+
+      {
+        title: "Memory Leak",
+        description: "This C program has a memory leak.",
+        difficulty: "hard",
+        language: "c",
+        buggy_code: `#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    for (int i = 0; i < 5; i++) {
+        int *ptr = malloc(sizeof(int) * 100);
+        if (ptr != NULL) {
+            printf("Allocated memory block %d\\n", i);
+        }
+    }
+    printf("Done allocating\\n");
+    return 0;
+}`,
+        fixed_code: `#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    for (int i = 0; i < 5; i++) {
+        int *ptr = malloc(sizeof(int) * 100);
+        if (ptr != NULL) {
+            printf("Allocated memory block %d\\n", i);
+            free(ptr);
+        }
+    }
+    printf("Done allocating\\n");
+    return 0;
+}`,
+        console_output: `Allocated memory block 0
+Allocated memory block 1
+Allocated memory block 2
+Allocated memory block 3
+Allocated memory block 4
+Done allocating
+(Memory leak detected by tools)`,
+        expected_output: `Allocated memory block 0
+Allocated memory block 1
+Allocated memory block 2
+Allocated memory block 3
+Allocated memory block 4
+Done allocating`,
+        explanation: "Memory Leak Error - Every malloc() must have a corresponding free(). Add free(ptr) after using the allocated memory.",
+        hints: "What happens to memory allocated with malloc()? How do you release it back to the system?",
+        tags: "memory-management,malloc,free,memory-leak"
       }
     ];
 

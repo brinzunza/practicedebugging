@@ -35,9 +35,10 @@ export default function QuestionWorkspace({ questionService }) {
     }
   }
 
+
   const simulateCodeExecution = () => {
     if (!question) return
-    
+
     // Show the console output from the buggy code
     setConsoleOutput(question.console_output || 'No output simulation available')
     setIsCodeExecuted(true)
@@ -51,29 +52,9 @@ export default function QuestionWorkspace({ questionService }) {
     setIsCodeExecuted(true)
 
     try {
-      // Check if this is supported language for real execution
-      const supportedLanguages = ['python', 'javascript', 'js']
-      const language = question.language.toLowerCase()
-
-      if (supportedLanguages.includes(language)) {
-        // Execute the actual user code
-        const output = await codeExecutor.executeCode(userCode, question.language)
-        setConsoleOutput(output)
-      } else {
-        // For unsupported languages, fall back to simulated execution
-        const normalizedUserCode = userCode.replace(/\s+/g, ' ').trim()
-        const normalizedBuggyCode = question.buggy_code.replace(/\s+/g, ' ').trim()
-        const normalizedFixedCode = question.fixed_code.replace(/\s+/g, ' ').trim()
-
-        if (normalizedUserCode === normalizedFixedCode) {
-          setConsoleOutput(question.expected_output || 'Code runs successfully!')
-        } else if (normalizedUserCode === normalizedBuggyCode) {
-          setConsoleOutput(question.console_output || 'No output simulation available')
-        } else {
-          const modifiedNote = `[${question.language} execution requires backend - showing simulated output]\n\n`
-          setConsoleOutput(modifiedNote + (question.console_output || 'No output simulation available'))
-        }
-      }
+      // Always use the codeExecutor to run code - it handles both executable and simulated languages
+      const output = await codeExecutor.executeCode(userCode, question.language)
+      setConsoleOutput(output)
     } catch (error) {
       setConsoleOutput(`Execution failed: ${error.message}`)
     } finally {
@@ -128,7 +109,7 @@ export default function QuestionWorkspace({ questionService }) {
       if (validation.isCorrect && !validation.isCheating) {
         setFeedback({
           type: 'success',
-          message: 'Excellent! Your code produces the correct output and properly fixes the bug!'
+          message: validation.message || 'Excellent! Your code produces the correct output!'
         })
         questionService.updateProgress(question.id, 'solved', userCode, timeSpent)
       } else if (validation.isCheating) {
@@ -140,17 +121,10 @@ export default function QuestionWorkspace({ questionService }) {
         })
         questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
       } else {
-        if (validation.hasError) {
-          setFeedback({
-            type: 'error',
-            message: 'Your code has an error. Check the console output and fix the issue.'
-          })
-        } else {
-          setFeedback({
-            type: 'error',
-            message: 'Your code runs but produces incorrect output. Compare with the expected output above.'
-          })
-        }
+        setFeedback({
+          type: 'error',
+          message: validation.message || 'Your code does not produce the expected output. Check the console output above.'
+        })
         questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
       }
     } catch (error) {
@@ -222,6 +196,29 @@ export default function QuestionWorkspace({ questionService }) {
                 PROBLEM DESCRIPTION
               </h3>
               <p className="text-secondary mb-4">{question.description}</p>
+
+              {question.table_schema && (
+                <div className="mb-4">
+                  <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
+                    DATABASE SCHEMA
+                  </h4>
+                  <div
+                    className="brutal-card"
+                    style={{
+                      backgroundColor: 'var(--bg-primary)',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: '12px',
+                      color: 'var(--text-primary)',
+                      whiteSpace: 'pre-wrap',
+                      minHeight: '120px',
+                      border: '1px solid var(--text-muted)',
+                      marginBottom: '12px'
+                    }}
+                  >
+                    {question.table_schema}
+                  </div>
+                </div>
+              )}
 
               {question.expected_output && (
                 <div className="mt-4">
