@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Editor } from '@monaco-editor/react'
 import { ArrowLeft, Play, CheckCircle, XCircle, Lightbulb, Eye, EyeOff, HelpCircle } from 'lucide-react'
 import ConsoleOutput from './ConsoleOutput'
+import codeExecutor from '../utils/codeExecutor'
 
 export default function QuestionWorkspace({ questionService }) {
   const { id } = useParams()
@@ -11,11 +12,11 @@ export default function QuestionWorkspace({ questionService }) {
   const [userCode, setUserCode] = useState('')
   const [showSolution, setShowSolution] = useState(false)
   const [showHints, setShowHints] = useState(false)
-  const [showProblemType, setShowProblemType] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [startTime, setStartTime] = useState(null)
   const [consoleOutput, setConsoleOutput] = useState('')
   const [isCodeExecuted, setIsCodeExecuted] = useState(false)
+  const [isExecuting, setIsExecuting] = useState(false)
   const editorRef = useRef(null)
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function QuestionWorkspace({ questionService }) {
       setUserCode(q.user_solution || q.buggy_code)
       setConsoleOutput('')
       setIsCodeExecuted(false)
+      setIsExecuting(false)
     }
   }
 
@@ -41,25 +43,42 @@ export default function QuestionWorkspace({ questionService }) {
     setIsCodeExecuted(true)
   }
 
-  const runUserCode = () => {
-    if (!question) return
-    
-    // Simple check to see if user fixed the code
-    const normalizedUserCode = userCode.replace(/\s+/g, ' ').trim()
-    const normalizedBuggyCode = question.buggy_code.replace(/\s+/g, ' ').trim()
-    const normalizedFixedCode = question.fixed_code.replace(/\s+/g, ' ').trim()
-    
-    if (normalizedUserCode === normalizedFixedCode) {
-      // Show expected output if code is fixed
-      setConsoleOutput(question.expected_output || 'Code runs successfully!')
-    } else if (normalizedUserCode === normalizedBuggyCode) {
-      // Show buggy output if code is unchanged
-      setConsoleOutput(question.console_output || 'No output simulation available')
-    } else {
-      // Show a generic message for modified but not fixed code
-      setConsoleOutput('Code modified - results may vary.\nRun the original code or fix the bug to see expected behavior.')
-    }
+  const runUserCode = async () => {
+    if (!question || isExecuting) return
+
+    setIsExecuting(true)
+    setConsoleOutput('Executing code...')
     setIsCodeExecuted(true)
+
+    try {
+      // Check if this is supported language for real execution
+      const supportedLanguages = ['python', 'javascript', 'js']
+      const language = question.language.toLowerCase()
+
+      if (supportedLanguages.includes(language)) {
+        // Execute the actual user code
+        const output = await codeExecutor.executeCode(userCode, question.language)
+        setConsoleOutput(output)
+      } else {
+        // For unsupported languages, fall back to simulated execution
+        const normalizedUserCode = userCode.replace(/\s+/g, ' ').trim()
+        const normalizedBuggyCode = question.buggy_code.replace(/\s+/g, ' ').trim()
+        const normalizedFixedCode = question.fixed_code.replace(/\s+/g, ' ').trim()
+
+        if (normalizedUserCode === normalizedFixedCode) {
+          setConsoleOutput(question.expected_output || 'Code runs successfully!')
+        } else if (normalizedUserCode === normalizedBuggyCode) {
+          setConsoleOutput(question.console_output || 'No output simulation available')
+        } else {
+          const modifiedNote = `[${question.language} execution requires backend - showing simulated output]\n\n`
+          setConsoleOutput(modifiedNote + (question.console_output || 'No output simulation available'))
+        }
+      }
+    } catch (error) {
+      setConsoleOutput(`Execution failed: ${error.message}`)
+    } finally {
+      setIsExecuting(false)
+    }
   }
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -86,27 +105,58 @@ export default function QuestionWorkspace({ questionService }) {
     monaco.editor.setTheme('brutal-dark')
   }
 
-  const checkSolution = () => {
+  const checkSolution = async () => {
     if (!userCode.trim()) {
       setFeedback({ type: 'error', message: 'Please write some code first!' })
       return
     }
 
     const timeSpent = Math.floor((Date.now() - startTime) / 1000)
-    
-    const normalizedUserCode = userCode.replace(/\s+/g, ' ').trim()
-    const normalizedSolution = question.fixed_code.replace(/\s+/g, ' ').trim()
-    
-    if (normalizedUserCode === normalizedSolution) {
-      setFeedback({ 
-        type: 'success', 
-        message: 'Excellent! You found and fixed the bug correctly!' 
-      })
-      questionService.updateProgress(question.id, 'solved', userCode, timeSpent)
-    } else {
-      setFeedback({ 
-        type: 'error', 
-        message: 'Not quite right. Keep trying! Check the hints if you need help.' 
+
+    setFeedback({ type: 'info', message: 'Testing your solution...' })
+
+    try {
+      // Use the enhanced validation method with anti-cheating
+      const validation = await codeExecutor.validateOutput(
+        userCode,
+        question.language,
+        question.expected_output || '',
+        question.buggy_code || '',
+        question.fixed_code || ''
+      )
+
+      if (validation.isCorrect && !validation.isCheating) {
+        setFeedback({
+          type: 'success',
+          message: 'Excellent! Your code produces the correct output and properly fixes the bug!'
+        })
+        questionService.updateProgress(question.id, 'solved', userCode, timeSpent)
+      } else if (validation.isCheating) {
+        const detectedPatterns = validation.cheatingPatterns ?
+          validation.cheatingPatterns.join(', ') : ''
+        setFeedback({
+          type: 'error',
+          message: `❌ ${validation.message}${detectedPatterns ? `\n\n🔍 Detected issues: ${detectedPatterns}` : ''}\n\n💡 Tip: Focus on fixing the actual logic error in the original code.`
+        })
+        questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
+      } else {
+        if (validation.hasError) {
+          setFeedback({
+            type: 'error',
+            message: 'Your code has an error. Check the console output and fix the issue.'
+          })
+        } else {
+          setFeedback({
+            type: 'error',
+            message: 'Your code runs but produces incorrect output. Compare with the expected output above.'
+          })
+        }
+        questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
+      }
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: `Failed to test your code: ${error.message}`
       })
       questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
     }
@@ -118,6 +168,7 @@ export default function QuestionWorkspace({ questionService }) {
     setShowSolution(false)
     setConsoleOutput('')
     setIsCodeExecuted(false)
+    setIsExecuting(false)
   }
 
   if (!question) {
@@ -166,66 +217,72 @@ export default function QuestionWorkspace({ questionService }) {
               </div>
             </div>
 
-            {!showProblemType ? (
-              <div className="brutal-card mb-6" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                <h3 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '12px' }}>
-                  🕵️ MYSTERY DEBUG CHALLENGE
-                </h3>
-                <p className="text-secondary mb-4">
-                  Something is wrong with this code. Your job is to find and fix the bug!
-                </p>
-                <div className="flex gap-2">
-                  <button 
-                    className="brutal-button primary" 
-                    onClick={simulateCodeExecution}
-                    disabled={isCodeExecuted}
+            <div className="brutal-card mb-6" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+              <h3 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
+                PROBLEM DESCRIPTION
+              </h3>
+              <p className="text-secondary mb-4">{question.description}</p>
+
+              {question.expected_output && (
+                <div className="mt-4">
+                  <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
+                    EXPECTED OUTPUT
+                  </h4>
+                  <div
+                    className="brutal-card"
+                    style={{
+                      backgroundColor: 'var(--bg-primary)',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: '13px',
+                      color: 'var(--accent-green)',
+                      whiteSpace: 'pre-wrap',
+                      minHeight: '60px',
+                      border: '1px solid var(--accent-green)',
+                      marginBottom: '12px'
+                    }}
                   >
-                    <Play size={16} style={{ marginRight: '8px' }} />
-                    RUN CODE
-                  </button>
-                  <button 
-                    className="brutal-button"
-                    onClick={() => setShowProblemType(true)}
-                  >
-                    <HelpCircle size={16} style={{ marginRight: '8px' }} />
-                    REVEAL PROBLEM TYPE
-                  </button>
+                    {question.expected_output}
+                  </div>
+                  <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
+                    💡 Your task: Fix the code so it produces this exact output
+                  </p>
                 </div>
+              )}
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  className="brutal-button primary"
+                  onClick={simulateCodeExecution}
+                  disabled={isCodeExecuted}
+                >
+                  <Play size={16} style={{ marginRight: '8px' }} />
+                  RUN BUGGY CODE
+                </button>
               </div>
-            ) : (
-              <div className="brutal-card mb-6" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                <h3 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
-                  PROBLEM DESCRIPTION
-                </h3>
-                <p className="text-secondary">{question.description}</p>
-              </div>
-            )}
+            </div>
 
             {isCodeExecuted && (
               <div className="mb-6">
                 <h4 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
-                  ACTUAL OUTPUT
+                  BUGGY CODE OUTPUT
                 </h4>
-                <ConsoleOutput 
-                  output={consoleOutput} 
+                <ConsoleOutput
+                  output={consoleOutput}
                   isError={consoleOutput.includes('Error') || consoleOutput.includes('Exception')}
                 />
-                {showProblemType && question.expected_output && (
-                  <div className="mt-3">
-                    <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
-                      💡 <strong>Debugging Tip:</strong> Compare this actual output with the expected output shown in the solution. 
-                      The differences will help you identify what needs to be fixed.
-                    </p>
-                  </div>
-                )}
+                <div className="mt-3">
+                  <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
+                    💡 <strong>Debugging Tip:</strong> Compare this output with the expected output above.
+                    The differences will help you identify what needs to be fixed.
+                  </p>
+                </div>
               </div>
             )}
 
             <div className="flex gap-2 mb-4">
-              <button 
+              <button
                 className={`brutal-button ${showHints ? 'primary' : ''}`}
                 onClick={() => setShowHints(!showHints)}
-                disabled={!showProblemType}
               >
                 <Lightbulb size={16} style={{ marginRight: '8px' }} />
                 {showHints ? 'HIDE HINTS' : 'SHOW HINTS'}
@@ -322,9 +379,13 @@ export default function QuestionWorkspace({ questionService }) {
                 <button className="brutal-button" onClick={resetCode}>
                   RESET
                 </button>
-                <button className="brutal-button secondary" onClick={runUserCode}>
+                <button
+                  className="brutal-button secondary"
+                  onClick={runUserCode}
+                  disabled={isExecuting}
+                >
                   <Play size={16} style={{ marginRight: '8px' }} />
-                  RUN CODE
+                  {isExecuting ? 'EXECUTING...' : 'RUN CODE'}
                 </button>
                 <button className="brutal-button primary" onClick={checkSolution}>
                   <CheckCircle size={16} style={{ marginRight: '8px' }} />
@@ -356,21 +417,25 @@ export default function QuestionWorkspace({ questionService }) {
             </div>
 
             {feedback && (
-              <div 
+              <div
                 className="brutal-card"
-                style={{ 
-                  backgroundColor: feedback.type === 'success' ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
-                  borderColor: feedback.type === 'success' ? 'var(--accent-secondary)' : 'var(--accent-primary)',
+                style={{
+                  backgroundColor: feedback.type === 'success' ? 'rgba(0, 255, 0, 0.1)' :
+                                 feedback.type === 'info' ? 'rgba(0, 123, 255, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+                  borderColor: feedback.type === 'success' ? 'var(--accent-secondary)' :
+                              feedback.type === 'info' ? '#007bff' : 'var(--accent-primary)',
                   margin: '16px 0'
                 }}
               >
                 <div className="flex items-center gap-2">
                   {feedback.type === 'success' ? (
                     <CheckCircle size={20} color="var(--accent-secondary)" />
+                  ) : feedback.type === 'info' ? (
+                    <Play size={20} color="#007bff" />
                   ) : (
                     <XCircle size={20} color="var(--accent-primary)" />
                   )}
-                  <p className="text-primary" style={{ margin: 0 }}>
+                  <p className="text-primary" style={{ margin: 0, whiteSpace: 'pre-line' }}>
                     {feedback.message}
                   </p>
                 </div>
