@@ -69,28 +69,6 @@ Output: ${output}
     }
   }
 
-  const testSQLExecution = async () => {
-    setIsLoading(true)
-    setTestResult('Testing SQL execution (should use SQL.js)...')
-
-    const testSQL = `SELECT department, COUNT(*) as employee_count
-FROM employees
-GROUP BY department
-ORDER BY employee_count DESC;`
-
-    try {
-      const output = await codeExecutor.executeCode(testSQL, 'sql')
-      setTestResult(`✅ SQL execution successful (using SQL.js)!
-Output:
-${output}
-
-🗄️ This uses local SQLite via SQL.js`)
-    } catch (error) {
-      setTestResult(`❌ SQL execution failed: ${error.message}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <div className="brutal-card" style={{ margin: '20px 0' }}>
@@ -117,14 +95,6 @@ ${output}
           style={{ backgroundColor: 'var(--accent-green)', color: 'black' }}
         >
           Test Python (Pyodide)
-        </button>
-        <button
-          className="brutal-button"
-          onClick={testSQLExecution}
-          disabled={isLoading}
-          style={{ backgroundColor: 'orange', color: 'black' }}
-        >
-          Test SQL (SQL.js)
         </button>
       </div>
 

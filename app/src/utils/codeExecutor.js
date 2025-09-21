@@ -1,6 +1,5 @@
 import { loadPyodide } from 'pyodide'
 import { judge0Service } from '../services/judge0Service.js'
-import sqlService from '../services/sqlService.js'
 
 class CodeExecutor {
   constructor() {
@@ -123,9 +122,6 @@ except Exception as e:
       return this.simulateCOutput(code, expectedOutput)
     }
 
-    if (lang === 'sql') {
-      return this.simulateSQLOutput(code, expectedOutput)
-    }
 
     // Fallback
     return `[${language.toUpperCase()} execution requires backend - simulated output]`
@@ -343,75 +339,7 @@ Done allocating
     return hasCorrectArrayBounds && (hasStrncpy || hasFree || noObviousErrors)
   }
 
-  simulateSQLOutput(code) {
-    const normalizedSQL = code.toLowerCase()
 
-    // Missing WHERE clause
-    if (normalizedSQL.includes('delete') && !normalizedSQL.includes('where')) {
-      return 'ERROR: DELETE without WHERE clause would delete all records!'
-    }
-
-    // Column name errors
-    if (normalizedSQL.includes('creation_date')) {
-      return 'ERROR: column "creation_date" does not exist'
-    }
-
-    // HAVING vs WHERE errors
-    if (normalizedSQL.includes('where') && normalizedSQL.includes('avg(')) {
-      return 'ERROR: aggregate functions are not allowed in WHERE'
-    }
-
-    // GROUP BY errors
-    if (normalizedSQL.includes('group by') && normalizedSQL.includes('employee_name') && normalizedSQL.includes('select')) {
-      return 'ERROR: column "employee_name" must appear in GROUP BY clause or be used in an aggregate function'
-    }
-
-    // Success cases
-    if (normalizedSQL.includes('delete') && normalizedSQL.includes('where')) {
-      return 'DELETE 2\n(Query executed successfully)'
-    }
-
-    if (normalizedSQL.includes('select') && normalizedSQL.includes('having')) {
-      return 'department | avg_salary\n----------+----------\nIT         | 77500.00\n(1 row)'
-    }
-
-    if (normalizedSQL.includes('count(*)')) {
-      return 'department | total_employees\n-----------+----------------\nIT         | 3\nSales      | 2\nHR         | 1\n(3 rows)'
-    }
-
-    return '[SQL execution requires database connection - simulated output]'
-  }
-
-  async executeSQLReal(code, expectedOutput = null) {
-    try {
-      console.log('Executing SQL with SQL.js...')
-
-      // Determine which schema to use based on the code
-      let schema = null
-      const lowerCode = code.toLowerCase()
-
-      if (lowerCode.includes('employee_hierarchy') || lowerCode.includes('employee_id')) {
-        schema = sqlService.getSchema('employee_hierarchy')
-      } else if (lowerCode.includes('employee')) {
-        schema = sqlService.getSchema('employees')
-      } else if (lowerCode.includes('user') && lowerCode.includes('product')) {
-        schema = sqlService.getSchema('users_products')
-      } else if (lowerCode.includes('user')) {
-        schema = sqlService.getSchema('users')
-      } else if (lowerCode.includes('product')) {
-        schema = sqlService.getSchema('products')
-      } else if (lowerCode.includes('customer') || lowerCode.includes('order')) {
-        schema = sqlService.getSchema('customers_orders')
-      }
-
-      const output = await sqlService.executeSQL(code, schema)
-      console.log('SQL execution successful:', output)
-      return output
-    } catch (error) {
-      console.warn('SQL execution failed:', error.message)
-      return `SQL Error: ${error.message}`
-    }
-  }
 
   async executeCompiledLanguageReal(code, language) {
     try {
@@ -449,9 +377,6 @@ Done allocating
         case 'c++':
           // Try real execution first, fallback to simulation
           return await this.executeCompiledLanguageReal(code, language)
-        case 'sql':
-          // For SQL, use real execution with SQL.js
-          return await this.executeSQLReal(code)
         default:
           return `Execution not supported for language: ${language}`
       }
@@ -477,8 +402,6 @@ Done allocating
         case 'c++':
           // Real execution only - no fallback for validation
           return await this.executeCompiledLanguageReal(code, language)
-        case 'sql':
-          return await this.executeSQLReal(code, expectedOutput)
         default:
           return `Execution not supported for language: ${language}`
       }
@@ -685,8 +608,6 @@ Done allocating
       case 'cpp':
       case 'c++':
         return this.detectCFixes(userCode, buggyCode, fixedCode)
-      case 'sql':
-        return this.detectSQLFixes(userCode, buggyCode, fixedCode)
       case 'python':
         return this.detectPythonFixes(userCode, buggyCode, fixedCode)
       default:
@@ -757,54 +678,6 @@ Done allocating
     return this.checkPatternFixes(userCode, buggyCode, fixedCode, patterns)
   }
 
-  detectSQLFixes(userCode, buggyCode, fixedCode) {
-    const patterns = [
-      // Missing WHERE clause
-      {
-        name: 'missing_where',
-        buggyPattern: /delete\s+from\s+\w+\s*;/gi,
-        fixedPattern: /delete\s+from\s+\w+\s+where/gi,
-        description: 'Missing WHERE clause fix'
-      },
-      // Column name errors - more flexible
-      {
-        name: 'column_name_creation',
-        buggyPattern: /creation_date/gi,
-        fixedPattern: /created_date/gi,
-        description: 'Column name fix (creation_date → created_date)'
-      },
-      // GROUP BY errors - WHERE with aggregate functions
-      {
-        name: 'having_vs_where',
-        buggyPattern: /where\s+avg\s*\(/gi,
-        fixedPattern: /having\s+avg\s*\(/gi,
-        description: 'GROUP BY clause fix (WHERE → HAVING with aggregates)'
-      },
-      // COUNT vs COUNT(*) - more specific
-      {
-        name: 'count_null_values',
-        buggyPattern: /count\s*\(\s*manager_id\s*\)/gi,
-        fixedPattern: /count\s*\(\s*\*\s*\)/gi,
-        description: 'COUNT function fix (COUNT(column) → COUNT(*) to include NULLs)'
-      },
-      // JOIN without proper conditions (cartesian product)
-      {
-        name: 'cartesian_product',
-        buggyPattern: /from\s+\w+\s+\w+\s*,\s*\w+\s+\w+\s+where/gi,
-        fixedPattern: /join\s+\w+\s+\w+\s+on/gi,
-        description: 'JOIN fix (avoid cartesian product)'
-      },
-      // Ambiguous column references
-      {
-        name: 'ambiguous_column',
-        buggyPattern: /where\s+user_id\s*=/gi,
-        fixedPattern: /where\s+\w+\.user_id\s*=/gi,
-        description: 'Ambiguous column fix (add table alias)'
-      }
-    ]
-
-    return this.checkPatternFixes(userCode, buggyCode, fixedCode, patterns)
-  }
 
   detectPythonFixes(userCode, buggyCode, fixedCode) {
     const patterns = [
@@ -1030,7 +903,7 @@ Done allocating
     const lang = language.toLowerCase()
 
     // Strategy 2: Language-specific intelligent comparison
-    if (['java', 'c', 'cpp', 'c++', 'sql'].includes(lang)) {
+    if (['java', 'c', 'cpp', 'c++'].includes(lang)) {
       return this.compareSimulatedOutput(actual, expected, language)
     }
 
@@ -1139,8 +1012,6 @@ Done allocating
       case 'c':
       case 'cpp':
         return `${baseMessage} Common C issues: buffer overflow (use strncpy), array bounds (use < instead of <=), memory leaks (add free()).`
-      case 'sql':
-        return `${baseMessage} Common SQL issues: missing WHERE clause, column name errors, GROUP BY vs HAVING, COUNT(*) vs COUNT(column).`
       default:
         return baseMessage
     }
