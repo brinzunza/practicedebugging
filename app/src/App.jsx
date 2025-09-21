@@ -10,17 +10,25 @@ import { QuestionService } from './database/questionService'
 
 function App() {
   const [questionService, setQuestionService] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    try {
-      initDatabase()
-      const service = new QuestionService()
-      service.seedSampleQuestions()
-      setQuestionService(service)
-    } catch (error) {
-      console.error('Failed to initialize app:', error)
+    const initializeApp = async () => {
+      try {
+        initDatabase()
+        const service = new QuestionService()
+        await service.seedSampleQuestions()
+        setQuestionService(service)
+      } catch (error) {
+        console.error('Failed to initialize app:', error)
+      }
     }
-  }, [])
+    initializeApp()
+  }, [refreshKey])
+
+  const refreshApp = () => {
+    setRefreshKey(prev => prev + 1)
+  }
 
   if (!questionService) {
     return (
@@ -40,7 +48,7 @@ function App() {
           <Routes>
             <Route path="/" element={<QuestionList questionService={questionService} />} />
             <Route path="/question/:id" element={<QuestionWorkspace questionService={questionService} />} />
-            <Route path="/stats" element={<Stats questionService={questionService} />} />
+            <Route path="/stats" element={<Stats questionService={questionService} refreshApp={refreshApp} />} />
             <Route path="/learn" element={<LearningGuide />} />
           </Routes>
         </main>

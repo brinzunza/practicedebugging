@@ -1,4 +1,4 @@
-export const sampleQuestions = [
+    const sampleQuestions = [
       // EASY DIFFICULTY QUESTIONS
       
       // Python Easy Questions
@@ -493,25 +493,25 @@ print(id(db1), id(db2))`,
         description: "This Java method has an array index out of bounds error.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class ArrayProcessor {
     public static void printArray(int[] arr) {
         for (int i = 0; i <= arr.length; i++) {
             System.out.println(arr[i]);
         }
     }
-
+    
     public static void main(String[] args) {
         int[] numbers = {1, 2, 3};
         printArray(numbers);
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class ArrayProcessor {
     public static void printArray(int[] arr) {
         for (int i = 0; i < arr.length; i++) {
             System.out.println(arr[i]);
         }
     }
-
+    
     public static void main(String[] args) {
         int[] numbers = {1, 2, 3};
         printArray(numbers);
@@ -534,7 +534,7 @@ Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out
         description: "This Java string comparison doesn't work correctly.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class StringChecker {
     public static boolean isValidPassword(String password) {
         String correctPassword = "password123";
         return password == correctPassword;
@@ -545,7 +545,7 @@ Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out
         System.out.println(isValidPassword("wrong"));
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class StringChecker {
     public static boolean isValidPassword(String password) {
         String correctPassword = "password123";
         return password.equals(correctPassword);
@@ -569,7 +569,7 @@ false`,
         description: "This Java code has a syntax error.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class Calculator {
     public static int add(int a, int b) {
         int result = a + b
         return result;
@@ -579,7 +579,7 @@ false`,
         System.out.println(add(5, 3));
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class Calculator {
     public static int add(int a, int b) {
         int result = a + b;
         return result;
@@ -600,7 +600,7 @@ false`,
         description: "This calculator gives incorrect results for division.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class Calculator {
     public static double divide(int a, int b) {
         return a / b;
     }
@@ -610,7 +610,7 @@ false`,
         System.out.println(divide(7, 3));
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class Calculator {
     public static double divide(int a, int b) {
         return (double) a / b;
     }
@@ -727,7 +727,7 @@ Bob transactions: [50]`,
         description: "This Integer operation throws unexpected NullPointerException.",
         difficulty: "medium",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class AutoboxingIssue {
     public static void main(String[] args) {
         Integer a = null;
         Integer b = 5;
@@ -735,7 +735,7 @@ Bob transactions: [50]`,
         System.out.println(result);
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class AutoboxingIssue {
     public static void main(String[] args) {
         Integer a = null;
         Integer b = 5;
@@ -760,7 +760,7 @@ Bob transactions: [50]`,
         language: "java",
         buggy_code: `import java.util.*;
 
-public class Main {
+public class LoopModification {
     public static void main(String[] args) {
         List<String> list = new ArrayList<>();
         list.add("apple");
@@ -778,7 +778,7 @@ public class Main {
 }`,
         fixed_code: `import java.util.*;
 
-public class Main {
+public class LoopModification {
     public static void main(String[] args) {
         List<String> list = new ArrayList<>();
         list.add("apple");
@@ -893,7 +893,7 @@ for func in functions:
         language: "java",
         buggy_code: `import java.util.*;
 
-public class Main {
+public class TypeErasure {
     public static <T> boolean isInstanceOf(Object obj, Class<T> clazz) {
         return obj instanceof T;  // Won't compile
     }
@@ -905,7 +905,7 @@ public class Main {
 }`,
         fixed_code: `import java.util.*;
 
-public class Main {
+public class TypeErasure {
     public static <T> boolean isInstanceOf(Object obj, Class<T> clazz) {
         return clazz.isInstance(obj);
     }
@@ -926,7 +926,7 @@ public class Main {
         description: "This method doesn't handle null input properly.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class StringProcessor {
     public static void processString(String input) {
         System.out.println(input.toUpperCase());
         System.out.println(input.length());
@@ -937,7 +937,7 @@ public class Main {
         processString(null);
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class StringProcessor {
     public static void processString(String input) {
         if (input != null) {
             System.out.println(input.toUpperCase());
@@ -967,7 +967,7 @@ Input is null`,
         description: "This array initialization creates an infinite loop.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class ArrayInitializer {
     public static void main(String[] args) {
         int[] numbers = new int[5];
         for (int i = 0; i <= numbers.length; i++) {
@@ -979,7 +979,7 @@ Input is null`,
         }
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class ArrayInitializer {
     public static void main(String[] args) {
         int[] numbers = new int[5];
         for (int i = 0; i < numbers.length; i++) {
@@ -1006,7 +1006,7 @@ Input is null`,
         description: "This class confuses static and instance members.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class Counter {
     private int count = 0;
 
     public static void increment() {
@@ -1018,7 +1018,7 @@ Input is null`,
         System.out.println(count);
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class Counter {
     private static int count = 0;  // Make it static
 
     public static void increment() {
@@ -1041,7 +1041,7 @@ Input is null`,
         description: "This switch statement doesn't work as expected.",
         difficulty: "easy",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class GradeCalculator {
     public static String getLetterGrade(int score) {
         String grade;
         switch (score / 10) {
@@ -1065,7 +1065,7 @@ Input is null`,
         System.out.println(getLetterGrade(82));
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class GradeCalculator {
     public static String getLetterGrade(int score) {
         String grade;
         switch (score / 10) {
@@ -1108,7 +1108,7 @@ B`,
         language: "java",
         buggy_code: `import java.util.*;
 
-public class Main {
+public class ListProcessor {
     public static void main(String[] args) {
         ArrayList<String> list = new ArrayList<>();
         list[0] = "apple";  // Cannot use array syntax
@@ -1119,7 +1119,7 @@ public class Main {
 }`,
         fixed_code: `import java.util.*;
 
-public class Main {
+public class ListProcessor {
     public static void main(String[] args) {
         ArrayList<String> list = new ArrayList<>();
         list.add("apple");
@@ -1139,7 +1139,7 @@ public class Main {
         description: "This class has static initialization order issues.",
         difficulty: "medium",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class InitializationOrder {
     static int x = getValue();
     static int y = 20;
 
@@ -1156,7 +1156,7 @@ public class Main {
         System.out.println("Final: x = " + x + ", y = " + y);
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class InitializationOrder {
     static int y = 20;  // Initialize y first
     static int x = getValue();
 
@@ -1200,7 +1200,7 @@ class Dog extends Animal {
     }
 }
 
-public class Main {
+public class PolymorphismTest {
     public static void main(String[] args) {
         Animal animal = new Dog();
         animal.makeSound();  // Calls Animal version, not Dog
@@ -1219,7 +1219,7 @@ class Dog extends Animal {
     }
 }
 
-public class Main {
+public class PolymorphismTest {
     public static void main(String[] args) {
         Animal animal = new Dog();
         animal.makeSound();  // Calls Dog version
@@ -1236,7 +1236,7 @@ public class Main {
         description: "This class tries to modify final variables incorrectly.",
         difficulty: "medium",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class FinalVariable {
     private final int value;
     private final List<String> items = new ArrayList<>();
 
@@ -1255,7 +1255,7 @@ public class Main {
 }`,
         fixed_code: `import java.util.*;
 
-public class Main {
+public class FinalVariable {
     private final int value;
     private final List<String> items = new ArrayList<>();
 
@@ -1287,7 +1287,7 @@ public class Main {
         language: "java",
         buggy_code: `import java.io.*;
 
-public class Main {
+public class FileProcessor {
     public static void readFile(String filename) {
         FileReader file = new FileReader(filename);  // Throws IOException
         BufferedReader reader = new BufferedReader(file);
@@ -1302,7 +1302,7 @@ public class Main {
 }`,
         fixed_code: `import java.io.*;
 
-public class Main {
+public class FileProcessor {
     public static void readFile(String filename) {
         try {
             FileReader file = new FileReader(filename);
@@ -1332,7 +1332,7 @@ public class Main {
         language: "java",
         buggy_code: `import java.util.*;
 
-public class Main {
+public class WildcardIssue {
     public static void addNumbers(List<? extends Number> list) {
         list.add(42);  // Cannot add to ? extends
         list.add(3.14);
@@ -1346,7 +1346,7 @@ public class Main {
 }`,
         fixed_code: `import java.util.*;
 
-public class Main {
+public class WildcardIssue {
     public static void addNumbers(List<? super Integer> list) {
         list.add(42);  // Can add to ? super
     }
@@ -1374,7 +1374,7 @@ public class Main {
         description: "This inner class has access modifier issues.",
         difficulty: "hard",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class OuterClass {
     private static int staticVar = 10;
     private int instanceVar = 20;
 
@@ -1397,12 +1397,12 @@ public class Main {
         si.printVars();
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class OuterClass {
     private static int staticVar = 10;
     private int instanceVar = 20;
 
     static class StaticInner {
-        public void printVars(Main outer) {
+        public void printVars(OuterClass outer) {
             System.out.println(staticVar);
             System.out.println(outer.instanceVar);  // Access via instance
         }
@@ -1416,7 +1416,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Main outer = new Main();
+        OuterClass outer = new OuterClass();
         StaticInner si = new StaticInner();
         si.printVars(outer);
     }
@@ -1436,7 +1436,7 @@ public class Main {
         buggy_code: `import java.util.*;
 import java.util.stream.*;
 
-public class Main {
+public class StreamLazy {
     public static void main(String[] args) {
         List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
 
@@ -1454,7 +1454,7 @@ public class Main {
         fixed_code: `import java.util.*;
 import java.util.stream.*;
 
-public class Main {
+public class StreamLazy {
     public static void main(String[] args) {
         List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
 
@@ -2277,7 +2277,7 @@ container1.remove();  // No memory leak`,
         description: "This counter class is not thread-safe.",
         difficulty: "hard",
         language: "java",
-        buggy_code: `public class Main {
+        buggy_code: `public class Counter {
     private int count = 0;
 
     public void increment() {
@@ -2310,7 +2310,7 @@ container1.remove();  // No memory leak`,
         System.out.println("Expected: 10000, Actual: " + counter.getCount());
     }
 }`,
-        fixed_code: `public class Main {
+        fixed_code: `public class Counter {
     private volatile int count = 0;  // Volatile for visibility
     private final Object lock = new Object();
 

@@ -3,7 +3,7 @@ import { Trophy, Clock, Target, Zap, TrendingUp } from 'lucide-react'
 import ClearData from './ClearData'
 import Judge0Test from './Judge0Test'
 
-export default function Stats({ questionService }) {
+export default function Stats({ questionService, refreshApp }) {
   const [stats, setStats] = useState(null)
   const [questions, setQuestions] = useState([])
 
@@ -304,9 +304,9 @@ export default function Stats({ questionService }) {
       <div className="brutal-card text-center mt-8">
         <h3 className="brutal-subheader mb-4">DATA MANAGEMENT</h3>
         <p className="text-secondary mb-4">
-          Use "Reseed Questions" to reload all questions with the latest updates, including new C problems.
+          Use "Reseed Questions" to reload all questions with the latest updates.
         </p>
-        <ClearData onClear={loadStats} questionService={questionService} />
+        <ClearData onClear={loadStats} questionService={questionService} refreshApp={refreshApp} />
       </div>
 
       <Judge0Test />
