@@ -100,7 +100,7 @@ export default function QuestionList({ questionService }) {
                     <h3 className="brutal-subheader" style={{ marginBottom: '8px' }}>
                       {question.title}
                     </h3>
-                    <p className="text-secondary">🔍 Debug Challenge - Find and fix the hidden bug!</p>
+                    <p className="text-secondary">Debug Challenge - Find and fix the hidden bug!</p>
                   </div>
                 </div>
                 

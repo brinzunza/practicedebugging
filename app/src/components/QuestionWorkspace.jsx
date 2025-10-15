@@ -117,7 +117,7 @@ export default function QuestionWorkspace({ questionService }) {
           validation.cheatingPatterns.join(', ') : ''
         setFeedback({
           type: 'error',
-          message: `❌ ${validation.message}${detectedPatterns ? `\n\n🔍 Detected issues: ${detectedPatterns}` : ''}\n\n💡 Tip: Focus on fixing the actual logic error in the original code.`
+          message: `${validation.message}${detectedPatterns ? `\n\nDetected issues: ${detectedPatterns}` : ''}\n\nTip: Focus on fixing the actual logic error in the original code.`
         })
         questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
       } else {
@@ -241,7 +241,7 @@ export default function QuestionWorkspace({ questionService }) {
                     {question.expected_output}
                   </div>
                   <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
-                    💡 Your task: Fix the code so it produces this exact output
+                    Your task: Fix the code so it produces this exact output
                   </p>
                 </div>
               )}
@@ -269,7 +269,7 @@ export default function QuestionWorkspace({ questionService }) {
                 />
                 <div className="mt-3">
                   <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
-                    💡 <strong>Debugging Tip:</strong> Compare this output with the expected output above.
+                    <strong>Debugging Tip:</strong> Compare this output with the expected output above.
                     The differences will help you identify what needs to be fixed.
                   </p>
                 </div>

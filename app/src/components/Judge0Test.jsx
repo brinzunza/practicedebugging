@@ -16,14 +16,14 @@ export default function Judge0Test() {
       const used = judge0Service.dailyExecutions
 
       if (isHealthy) {
-        setTestResult(`✅ Judge0 connection successful!
-📊 Executions today: ${used}/50
-🔋 Remaining: ${remaining}`)
+        setTestResult(`Judge0 connection successful!
+Executions today: ${used}/50
+Remaining: ${remaining}`)
       } else {
-        setTestResult('❌ Judge0 connection failed. Check API key and configuration.')
+        setTestResult('Judge0 connection failed. Check API key and configuration.')
       }
     } catch (error) {
-      setTestResult(`❌ Error: ${error.message}`)
+      setTestResult(`Error: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -41,9 +41,9 @@ export default function Judge0Test() {
 
     try {
       const output = await judge0Service.executeCode(testCode, 'java')
-      setTestResult(`✅ Execution successful!\nOutput: ${output}`)
+      setTestResult(`Execution successful!\nOutput: ${output}`)
     } catch (error) {
-      setTestResult(`❌ Execution failed: ${error.message}`)
+      setTestResult(`Execution failed: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -59,11 +59,11 @@ print(f"2 + 3 = {result}")`
 
     try {
       const output = await codeExecutor.executeCode(testCode, 'python')
-      setTestResult(`✅ Python execution successful (using Pyodide)!
+      setTestResult(`Python execution successful (using Pyodide)!
 Output: ${output}
-🐍 This uses local Pyodide, not Judge0`)
+This uses local Pyodide, not Judge0`)
     } catch (error) {
-      setTestResult(`❌ Python execution failed: ${error.message}`)
+      setTestResult(`Python execution failed: ${error.message}`)
     } finally {
       setIsLoading(false)
     }

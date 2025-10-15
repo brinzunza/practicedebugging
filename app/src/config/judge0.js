@@ -12,9 +12,6 @@ export const JUDGE0_CONFIG = {
 
   // Language IDs for Judge0 (only compiled languages)
   languageIds: {
-    'c': 50,           // C (GCC 9.2.0)
-    'cpp': 54,         // C++ (GCC 9.2.0)
-    'c++': 54,
     'java': 62         // Java (OpenJDK 13.0.1)
     // Note: Python and JavaScript use original implementations (Pyodide/V8)
   },

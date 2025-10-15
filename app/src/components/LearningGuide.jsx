@@ -552,9 +552,9 @@ export default function LearningGuide() {
           })}
 
           <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-            <h3 className="font-bold mb-2">💡 Pro Tip</h3>
+            <h3 className="font-bold mb-2">Pro Tip</h3>
             <p className="text-sm text-secondary">
-              The best debuggers aren't born, they're made through practice and systematic thinking. 
+              The best debuggers aren't born, they're made through practice and systematic thinking.
               Apply these concepts to the debugging challenges in this app!
             </p>
           </div>
@@ -608,7 +608,7 @@ export default function LearningGuide() {
               {/* Interactive Elements */}
               {activeSection === 'methodology' && (
                 <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <h3 className="brutal-subheader mb-4">🎯 PRACTICE EXERCISE</h3>
+                  <h3 className="brutal-subheader mb-4">PRACTICE EXERCISE</h3>
                   <p className="text-secondary mb-4">
                     Next time you encounter a bug, try following the DEBUG.EXE methodology step by step. 
                     Write down your observations and hypotheses before touching any code.
@@ -631,24 +631,24 @@ export default function LearningGuide() {
 
               {activeSection === 'tools' && (
                 <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <h3 className="brutal-subheader mb-4">🛠️ TOOL CHECKLIST</h3>
+                  <h3 className="brutal-subheader mb-4">TOOL CHECKLIST</h3>
                   <div className="grid grid-2 gap-4">
                     <div>
                       <h4 className="font-bold mb-2">Essential Tools:</h4>
                       <div className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                        <div>✓ Browser DevTools</div>
-                        <div>✓ IDE Debugger</div>
-                        <div>✓ Version Control (Git)</div>
-                        <div>✓ Logging Framework</div>
+                        <div>- Browser DevTools</div>
+                        <div>- IDE Debugger</div>
+                        <div>- Version Control (Git)</div>
+                        <div>- Logging Framework</div>
                       </div>
                     </div>
                     <div>
                       <h4 className="font-bold mb-2">Advanced Tools:</h4>
                       <div className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                        <div>✓ Static Analysis</div>
-                        <div>✓ Memory Profiler</div>
-                        <div>✓ Network Monitor</div>
-                        <div>✓ Error Tracking</div>
+                        <div>- Static Analysis</div>
+                        <div>- Memory Profiler</div>
+                        <div>- Network Monitor</div>
+                        <div>- Error Tracking</div>
                       </div>
                     </div>
                   </div>
@@ -657,7 +657,7 @@ export default function LearningGuide() {
 
               {activeSection === 'reference' && (
                 <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <h3 className="brutal-subheader mb-4">🚀 QUICK ACCESS</h3>
+                  <h3 className="brutal-subheader mb-4">QUICK ACCESS</h3>
                   <p className="text-secondary mb-4">
                     Bookmark this section for quick reference during debugging sessions. 
                     Print out the cheat sheet and keep it near your workspace!
