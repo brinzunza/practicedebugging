@@ -26,7 +26,7 @@ export default function Header() {
                 textTransform: 'uppercase',
                 textShadow: 'none'
               }}>
-                PraceticeDebugging.com
+                PracticeDebugging.com
               </div>
             </div>
           </Link>
