@@ -235,7 +235,13 @@ except Exception as e:
       const normalizedExpected = this.normalizeOutput(expectedOutput)
 
       // Check if this is the original buggy code
-      if (this.normalizeCode(userCode) === this.normalizeCode(buggyCode)) {
+      // For Python, we need to preserve indentation when comparing
+      const isPython = language.toLowerCase() === 'python'
+      const isSameAsBuggy = isPython
+        ? userCode.trim() === buggyCode.trim()
+        : this.normalizeCode(userCode) === this.normalizeCode(buggyCode)
+
+      if (isSameAsBuggy) {
         return {
           isCorrect: false,
           hasError: false,
