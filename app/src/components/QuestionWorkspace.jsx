@@ -167,9 +167,10 @@ export default function QuestionWorkspace({ questionService }) {
         </button>
       </div>
 
-      <div className="grid grid-2 gap-6">
+      <div>
+        {/* Question Description Section */}
         <div>
-          <div className="brutal-card">
+          <div className="brutal-card" style={{ marginBottom: '8px', padding: '16px' }}>
             <div className="flex justify-between items-start mb-4">
               <h1 className="brutal-subheader">{question.title}</h1>
               <div className="flex gap-2">
@@ -191,11 +192,11 @@ export default function QuestionWorkspace({ questionService }) {
               </div>
             </div>
 
-            <div className="brutal-card mb-6" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-              <h3 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
+            <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', marginBottom: '12px' }}>
+              <h3 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
                 PROBLEM DESCRIPTION
               </h3>
-              <p className="text-secondary mb-4">{question.description}</p>
+              <p className="text-secondary mb-4" style={{ fontSize: '13px' }}>{question.description}</p>
 
               {question.table_schema && (
                 <div className="mb-4">
@@ -259,8 +260,8 @@ export default function QuestionWorkspace({ questionService }) {
             </div>
 
             {isCodeExecuted && (
-              <div className="mb-6">
-                <h4 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
                   BUGGY CODE OUTPUT
                 </h4>
                 <ConsoleOutput
@@ -296,20 +297,20 @@ export default function QuestionWorkspace({ questionService }) {
             </div>
 
             {showHints && question.hints && (
-              <div className="brutal-card mb-4" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                <h4 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
+              <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', marginBottom: '12px' }}>
+                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
                   HINTS
                 </h4>
-                <p className="text-secondary">{question.hints}</p>
+                <p className="text-secondary" style={{ fontSize: '13px' }}>{question.hints}</p>
               </div>
             )}
 
             {showSolution && (
-              <div className="brutal-card mb-4" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                <h4 className="brutal-subheader" style={{ fontSize: '1rem', marginBottom: '8px' }}>
+              <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', marginBottom: '12px' }}>
+                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
                   SOLUTION EXPLANATION
                 </h4>
-                <p className="text-secondary mb-4">{question.explanation}</p>
+                <p className="text-secondary" style={{ fontSize: '13px', marginBottom: '12px' }}>{question.explanation}</p>
                 
                 <div className="mb-4">
                   <h5 className="font-bold mb-2">FIXED CODE:</h5>
@@ -368,8 +369,9 @@ export default function QuestionWorkspace({ questionService }) {
           </div>
         </div>
 
+        {/* Code Editor Section */}
         <div>
-          <div className="brutal-card">
+          <div className="brutal-card" style={{ marginTop: '0', marginBottom: '0', padding: '16px' }}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="brutal-subheader">CODE EDITOR</h2>
               <div className="flex gap-2">
@@ -391,13 +393,13 @@ export default function QuestionWorkspace({ questionService }) {
               </div>
             </div>
 
-            <div style={{ 
-              border: '2px solid var(--text-primary)', 
+            <div style={{
+              border: '2px solid var(--text-primary)',
               borderRadius: '4px',
               marginBottom: '16px'
             }}>
               <Editor
-                height="400px"
+                height="600px"
                 language={question.language}
                 value={userCode}
                 onChange={(value) => setUserCode(value)}
