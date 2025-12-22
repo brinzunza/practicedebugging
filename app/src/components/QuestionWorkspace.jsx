@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Editor } from '@monaco-editor/react'
-import { ArrowLeft, Play, CheckCircle, XCircle, Lightbulb, Eye, EyeOff, HelpCircle } from 'lucide-react'
-import ConsoleOutput from './ConsoleOutput'
+import { ArrowLeft, Play, CheckCircle, XCircle, Lightbulb, Eye, EyeOff } from 'lucide-react'
+import TestStatusIndicator from './TestStatusIndicator'
 import codeExecutor from '../utils/codeExecutor'
 
 export default function QuestionWorkspace({ questionService }) {
@@ -15,8 +15,9 @@ export default function QuestionWorkspace({ questionService }) {
   const [feedback, setFeedback] = useState(null)
   const [startTime, setStartTime] = useState(null)
   const [consoleOutput, setConsoleOutput] = useState('')
-  const [isCodeExecuted, setIsCodeExecuted] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
+  const [soundnessStatus, setSoundnessStatus] = useState('idle')
+  const [correctionStatus, setCorrectionStatus] = useState('idle')
   const editorRef = useRef(null)
 
   useEffect(() => {
@@ -30,33 +31,54 @@ export default function QuestionWorkspace({ questionService }) {
       setQuestion(q)
       setUserCode(q.user_solution || q.buggy_code)
       setConsoleOutput('')
-      setIsCodeExecuted(false)
       setIsExecuting(false)
+      setSoundnessStatus('idle')
+      setCorrectionStatus('idle')
+      setFeedback(null)
     }
   }
 
-
-  const simulateCodeExecution = () => {
-    if (!question) return
-
-    // Show the console output from the buggy code
-    setConsoleOutput(question.console_output || 'No output simulation available')
-    setIsCodeExecuted(true)
-  }
 
   const runUserCode = async () => {
     if (!question || isExecuting) return
 
     setIsExecuting(true)
     setConsoleOutput('Executing code...')
-    setIsCodeExecuted(true)
+
+    // Start loading animations
+    setSoundnessStatus('loading')
+    setCorrectionStatus('loading')
 
     try {
-      // Always use the codeExecutor to run code - it handles both executable and simulated languages
+      // Execute the code
       const output = await codeExecutor.executeCode(userCode, question.language)
       setConsoleOutput(output)
+
+      // Simulate soundness test delay
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Soundness test: Check if code is hardcoded (anti-cheating)
+      const cheatingCheck = codeExecutor.detectCheating(
+        userCode,
+        question.buggy_code || '',
+        question.expected_output || ''
+      )
+      setSoundnessStatus(cheatingCheck.isCheating ? 'failed' : 'passed')
+
+      // Simulate correction test delay
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Correction test: Check if output matches expected
+      const normalizedOutput = output.trim().replace(/\r\n/g, '\n').replace(/\s+$/gm, '')
+      const normalizedExpected = (question.expected_output || '').trim().replace(/\r\n/g, '\n').replace(/\s+$/gm, '')
+      const outputMatches = normalizedOutput === normalizedExpected
+
+      setCorrectionStatus(outputMatches && !output.includes('Error') && !output.includes('Exception') ? 'passed' : 'failed')
+
     } catch (error) {
       setConsoleOutput(`Execution failed: ${error.message}`)
+      setSoundnessStatus('failed')
+      setCorrectionStatus('failed')
     } finally {
       setIsExecuting(false)
     }
@@ -96,8 +118,12 @@ export default function QuestionWorkspace({ questionService }) {
 
     setFeedback({ type: 'info', message: 'Testing your solution...' })
 
+    // Start loading animations
+    setSoundnessStatus('loading')
+    setCorrectionStatus('loading')
+
     try {
-      // Use the enhanced validation method with anti-cheating
+      // Use the enhanced validation method
       const validation = await codeExecutor.validateOutput(
         userCode,
         question.language,
@@ -106,6 +132,24 @@ export default function QuestionWorkspace({ questionService }) {
         question.fixed_code || ''
       )
 
+      // Update console output
+      if (validation.actualOutput) {
+        setConsoleOutput(validation.actualOutput)
+      }
+
+      // Simulate soundness test delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Soundness test: Check if code is NOT hardcoded (anti-cheating)
+      setSoundnessStatus(validation.isCheating ? 'failed' : 'passed')
+
+      // Simulate correction test delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Correction test: Check if output matches expected
+      setCorrectionStatus(validation.isCorrect ? 'passed' : 'failed')
+
+      // Update feedback and progress
       if (validation.isCorrect && !validation.isCheating) {
         setFeedback({
           type: 'success',
@@ -117,17 +161,25 @@ export default function QuestionWorkspace({ questionService }) {
           validation.cheatingPatterns.join(', ') : ''
         setFeedback({
           type: 'error',
-          message: `${validation.message}${detectedPatterns ? `\n\nDetected issues: ${detectedPatterns}` : ''}\n\nTip: Focus on fixing the actual logic error in the original code.`
+          message: `Soundness test failed: Code appears to be hardcoded.${detectedPatterns ? `\n\nDetected issues: ${detectedPatterns}` : ''}\n\nTip: Focus on fixing the actual logic error in the original code.`
+        })
+        questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
+      } else if (validation.message === 'This is the original buggy code. You need to fix the bug first!') {
+        setFeedback({
+          type: 'error',
+          message: validation.message
         })
         questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
       } else {
         setFeedback({
           type: 'error',
-          message: validation.message || 'Your code does not produce the expected output. Check the console output above.'
+          message: validation.message || 'Correction test failed: Output does not match expected result.'
         })
         questionService.updateProgress(question.id, 'in_progress', userCode, timeSpent)
       }
     } catch (error) {
+      setSoundnessStatus('failed')
+      setCorrectionStatus('failed')
       setFeedback({
         type: 'error',
         message: `Failed to test your code: ${error.message}`
@@ -141,8 +193,9 @@ export default function QuestionWorkspace({ questionService }) {
     setFeedback(null)
     setShowSolution(false)
     setConsoleOutput('')
-    setIsCodeExecuted(false)
     setIsExecuting(false)
+    setSoundnessStatus('idle')
+    setCorrectionStatus('idle')
   }
 
   if (!question) {
@@ -247,35 +300,80 @@ export default function QuestionWorkspace({ questionService }) {
                 </div>
               )}
 
-              <div className="flex gap-2 mt-4">
-                <button
-                  className="brutal-button primary"
-                  onClick={simulateCodeExecution}
-                  disabled={isCodeExecuted}
-                >
-                  <Play size={16} style={{ marginRight: '8px' }} />
-                  RUN BUGGY CODE
-                </button>
-              </div>
             </div>
 
-            {isCodeExecuted && (
-              <div style={{ marginBottom: '12px' }}>
-                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
-                  BUGGY CODE OUTPUT
+            {/* Output and Test Status Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', marginBottom: '12px', alignItems: 'stretch' }}>
+              {/* Console Output - Left Side */}
+              <div
+                className="brutal-card"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  padding: '12px',
+                  margin: '0',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
+                  OUTPUT
                 </h4>
-                <ConsoleOutput
-                  output={consoleOutput}
-                  isError={consoleOutput.includes('Error') || consoleOutput.includes('Exception')}
-                />
-                <div className="mt-3">
-                  <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
-                    <strong>Debugging Tip:</strong> Compare this output with the expected output above.
-                    The differences will help you identify what needs to be fixed.
-                  </p>
+                <div
+                  style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '13px',
+                    minHeight: '80px',
+                    maxHeight: '200px',
+                    color: consoleOutput.includes('Error') || consoleOutput.includes('Exception')
+                      ? 'var(--accent-red)' : 'var(--accent-green)',
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word',
+                    overflow: 'auto',
+                    padding: '8px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-primary)'
+                  }}
+                >
+                  {consoleOutput || (
+                    <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      Run or check your code to see output...
+                    </div>
+                  )}
                 </div>
+
+                {feedback && (
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      padding: '8px',
+                      backgroundColor: feedback.type === 'success' ? 'rgba(0, 255, 0, 0.1)' :
+                                     feedback.type === 'info' ? 'rgba(0, 123, 255, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+                      border: `1px solid ${feedback.type === 'success' ? 'var(--accent-green)' :
+                              feedback.type === 'info' ? '#007bff' : 'var(--accent-red)'}`
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {feedback.type === 'success' ? (
+                        <CheckCircle size={16} color="var(--accent-green)" />
+                      ) : feedback.type === 'info' ? (
+                        <Play size={16} color="#007bff" />
+                      ) : (
+                        <XCircle size={16} color="var(--accent-red)" />
+                      )}
+                      <p style={{ margin: 0, fontSize: '12px', whiteSpace: 'pre-line' }}>
+                        {feedback.message}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Test Status - Right Side */}
+              <TestStatusIndicator
+                soundnessStatus={soundnessStatus}
+                correctionStatus={correctionStatus}
+              />
+            </div>
 
             <div className="flex gap-2 mb-4">
               <button
@@ -414,32 +512,6 @@ export default function QuestionWorkspace({ questionService }) {
                 onMount={handleEditorDidMount}
               />
             </div>
-
-            {feedback && (
-              <div
-                className="brutal-card"
-                style={{
-                  backgroundColor: feedback.type === 'success' ? 'rgba(0, 255, 0, 0.1)' :
-                                 feedback.type === 'info' ? 'rgba(0, 123, 255, 0.1)' : 'rgba(255, 0, 0, 0.1)',
-                  borderColor: feedback.type === 'success' ? 'var(--accent-secondary)' :
-                              feedback.type === 'info' ? '#007bff' : 'var(--accent-primary)',
-                  margin: '16px 0'
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  {feedback.type === 'success' ? (
-                    <CheckCircle size={20} color="var(--accent-secondary)" />
-                  ) : feedback.type === 'info' ? (
-                    <Play size={20} color="#007bff" />
-                  ) : (
-                    <XCircle size={20} color="var(--accent-primary)" />
-                  )}
-                  <p className="text-primary" style={{ margin: 0, whiteSpace: 'pre-line' }}>
-                    {feedback.message}
-                  </p>
-                </div>
-              </div>
-            )}
 
             {question.tags && (
               <div className="flex gap-2 mt-4">
