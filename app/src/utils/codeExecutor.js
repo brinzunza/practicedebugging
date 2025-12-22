@@ -162,19 +162,69 @@ except Exception as e:
     // Remove comments and normalize
     const normalizedUser = this.normalizeCode(userCode)
     const normalizedExpected = expectedOutput.toLowerCase().trim()
+    const patterns = []
 
-    // Check for hardcoded output
+    // Check 1: Hardcoded exact output string
     if (normalizedUser.includes(`"${normalizedExpected}"`) ||
         normalizedUser.includes(`'${normalizedExpected}'`) ||
-        normalizedUser.includes(`print("${normalizedExpected}")`) ||
-        normalizedUser.includes(`print('${normalizedExpected}')`)) {
-      return {
-        isCheating: true,
-        patterns: ['Hardcoded output detected']
+        normalizedUser.includes(`\`${normalizedExpected}\``)) {
+      patterns.push('Hardcoded exact output string detected')
+    }
+
+    // Check 2: Only print/console.log statements (no actual logic)
+    const withoutPrints = normalizedUser
+      .replace(/print\s*\([^)]*\)/g, '')
+      .replace(/console\.log\s*\([^)]*\)/g, '')
+      .replace(/system\.out\.println\s*\([^)]*\)/g, '')
+      .replace(/def\s+\w+\s*\([^)]*\)\s*:/g, '')
+      .replace(/function\s+\w+\s*\([^)]*\)\s*\{/g, '')
+      .replace(/public\s+static\s+void\s+\w+\s*\([^)]*\)\s*\{/g, '')
+      .replace(/\{|\}|\(|\)|;|:/g, '')
+      .trim()
+
+    if (withoutPrints.length < 10) {
+      patterns.push('Solution contains only print statements without actual logic')
+    }
+
+    // Check 3: Multiple hardcoded values that match output lines
+    const outputLines = expectedOutput.split('\n').map(line => line.trim().toLowerCase())
+    let hardcodedLineCount = 0
+
+    for (const line of outputLines) {
+      if (line.length > 0 && (
+          normalizedUser.includes(`"${line}"`) ||
+          normalizedUser.includes(`'${line}'`) ||
+          normalizedUser.includes(`\`${line}\``))) {
+        hardcodedLineCount++
       }
     }
 
-    return { isCheating: false, patterns: [] }
+    if (hardcodedLineCount >= Math.min(3, outputLines.length)) {
+      patterns.push('Multiple hardcoded output values detected')
+    }
+
+    // Check 4: No substantial changes from buggy code
+    const buggyNormalized = this.normalizeCode(buggyCode)
+    if (buggyNormalized && buggyCode.length > 0) {
+      // Calculate similarity (simple approach)
+      const userTokens = normalizedUser.split(/\s+/)
+      const buggyTokens = buggyNormalized.split(/\s+/)
+      const commonTokens = userTokens.filter(token =>
+        buggyTokens.includes(token) && token.length > 2
+      )
+
+      const similarity = commonTokens.length / Math.max(userTokens.length, 1)
+
+      // If too similar (>95%) but still different, might be a trivial change
+      if (similarity > 0.95 && normalizedUser !== buggyNormalized) {
+        patterns.push('Code is almost identical to buggy version')
+      }
+    }
+
+    return {
+      isCheating: patterns.length > 0,
+      patterns
+    }
   }
 
   async validateOutput(userCode, language, expectedOutput, buggyCode = '', fixedCode = '') {

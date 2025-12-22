@@ -225,25 +225,31 @@ print(score)`,
         tags: "variables,global,local,scope"
       },
       {
-        title: "List Comprehension Variable Leak",
-        description: "This list comprehension has an unexpected side effect.",
+        title: "Loop Variable Overwriting",
+        description: "This loop overwrites an important variable.",
         difficulty: "medium",
         language: "python",
         buggy_code: `i = 100
-squares = [i*i for i in range(5)]
+squares = []
+for i in range(5):
+    squares.append(i * i)
+
 print(f"i is now: {i}")
 print(f"squares: {squares}")`,
         fixed_code: `i = 100
-squares = [x*x for x in range(5)]
+squares = []
+for x in range(5):
+    squares.append(x * x)
+
 print(f"i is now: {i}")
 print(f"squares: {squares}")`,
         console_output: `i is now: 4
 squares: [0, 1, 4, 9, 16]`,
         expected_output: `i is now: 100
 squares: [0, 1, 4, 9, 16]`,
-        explanation: "Variable Leak Error - In Python 2, list comprehensions leaked iteration variables. Use different variable name to avoid conflicts.",
-        hints: "What happens to the loop variable after a list comprehension? How can you avoid overwriting existing variables?",
-        tags: "list-comprehension,variable-scope,leaking"
+        explanation: "Variable Overwriting Error - Loop variables persist after the loop ends and overwrite existing variables with the same name. Use a different variable name (like 'x' or 'j') to avoid overwriting 'i'.",
+        hints: "What happens to the loop variable after a for loop completes? How can you avoid overwriting existing variables?",
+        tags: "loops,variable-scope,naming,for-loop"
       },
       {
         title: "Set vs List for Membership",
@@ -323,35 +329,36 @@ None`,
         difficulty: "medium",
         language: "python",
         buggy_code: `def get_large_numbers(limit):
-    return [x**2 for x in range(limit)]  # Creates entire list in memory
+    result = [x**2 for x in range(limit)]  # Creates entire list in memory
+    print(f"Created list with {len(result)} elements")
+    return result
 
-# This uses lots of memory
-large_nums = get_large_numbers(1000000)
+# This uses lots of memory and takes long time
+large_nums = get_large_numbers(10000000)
 for i, num in enumerate(large_nums):
-    if i >= 5:
+    if i >= 3:
         break
     print(num)`,
         fixed_code: `def get_large_numbers(limit):
     return (x**2 for x in range(limit))  # Generator - lazy evaluation
 
-# This uses minimal memory
-large_nums = get_large_numbers(1000000)
+# This uses minimal memory and starts immediately
+large_nums = get_large_numbers(10000000)
+print("Generator created (no memory allocated yet)")
 for i, num in enumerate(large_nums):
-    if i >= 5:
+    if i >= 3:
         break
     print(num)`,
-        console_output: `0
+        console_output: `Created list with 10000000 elements
+0
 1
-4
-9
-16`,
-        expected_output: `0
+4`,
+        expected_output: `Generator created (no memory allocated yet)
+0
 1
-4
-9
-16`,
-        explanation: "Memory Usage Error - List comprehension creates entire list in memory. Use generator expression for lazy evaluation.",
-        hints: "What's the difference between [] and () in comprehensions? When would you use each?",
+4`,
+        explanation: "Memory Usage Error - List comprehension creates entire list in memory before returning, causing slow startup and high memory usage. Use generator expression for lazy evaluation that produces values on-demand.",
+        hints: "What's the difference between [] and () in comprehensions? When does each one allocate memory?",
         tags: "generators,memory,lazy-evaluation,performance"
       },
       {
@@ -448,42 +455,57 @@ print(D.__mro__)`,
         difficulty: "hard",
         language: "python",
         buggy_code: `class SingletonMeta(type):
+    _instance = None
+
     def __call__(cls, *args, **kwargs):
-        if not hasattr(cls, '_instance'):
-            cls._instance = super(SingletonMeta, cls).__call__(*args, **kwargs)
+        if cls._instance is None:
+            cls._instance = super().__call__(*args, **kwargs)
         return cls._instance
 
 class Database(metaclass=SingletonMeta):
     def __init__(self):
         self.connection = "Connected"
 
-# This should be the same instance
+class Cache(metaclass=SingletonMeta):
+    def __init__(self):
+        self.data = {}
+
+# These should be separate singletons but share the same instance!
 db1 = Database()
-db2 = Database()
-print(db1 is db2)
-print(id(db1), id(db2))`,
+cache1 = Cache()
+print("db1 is cache1:", db1 is cache1)
+print("Type of db1:", type(db1).__name__)
+print("Type of cache1:", type(cache1).__name__)`,
         fixed_code: `class SingletonMeta(type):
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(SingletonMeta, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
 
 class Database(metaclass=SingletonMeta):
     def __init__(self):
         self.connection = "Connected"
 
+class Cache(metaclass=SingletonMeta):
+    def __init__(self):
+        self.data = {}
+
+# Now they are separate singletons
 db1 = Database()
-db2 = Database()
-print(db1 is db2)
-print(id(db1), id(db2))`,
-        console_output: `True
-140... 140... (same IDs)`,
-        expected_output: `True
-140... 140... (same IDs)`,
-        explanation: "Metaclass Implementation - The original version works but could be improved. Store instances in class dict for better encapsulation.",
-        hints: "How do metaclasses control class creation? What's the difference between storing instance on class vs metaclass?",
+cache1 = Cache()
+print("db1 is cache1:", db1 is cache1)
+print("Type of db1:", type(db1).__name__)
+print("Type of cache1:", type(cache1).__name__)`,
+        console_output: `db1 is cache1: True
+Type of db1: Database
+Type of cache1: Database`,
+        expected_output: `db1 is cache1: False
+Type of db1: Database
+Type of cache1: Cache`,
+        explanation: "Metaclass Singleton Error - Storing _instance directly on metaclass causes all classes using the metaclass to share the same instance! Use a dictionary keyed by class to store separate instances for each class.",
+        hints: "What happens when multiple classes use the same metaclass? How should you store instances separately for each class?",
         tags: "metaclass,singleton,design-patterns,advanced"
       },
 
@@ -1490,27 +1512,26 @@ Result: [4, 8]`,
         difficulty: "easy",
         language: "javascript",
         buggy_code: `function confusingFunction() {
-    console.log(x);  // What gets printed?
-    var x = 5;
-    console.log(x);
+    console.log(y);  // ReferenceError - variable not declared at all
+    y = 5;  // Assignment without declaration
+    console.log(y);
 }
 
 confusingFunction();`,
         fixed_code: `function confusingFunction() {
-    var x;           // Hoisted declaration
-    console.log(x);  // undefined
-    x = 5;           // Assignment
-    console.log(x);  // 5
+    var y;           // Proper declaration
+    console.log(y);  // undefined
+    y = 5;           // Assignment
+    console.log(y);  // 5
 }
 
 confusingFunction();`,
-        console_output: `undefined
-5`,
+        console_output: `ReferenceError: y is not defined`,
         expected_output: `undefined
 5`,
-        explanation: "Variable Hoisting - var declarations are hoisted to top of function scope, but assignments stay in place. The variable exists but is undefined.",
-        hints: "What happens to var declarations in JavaScript? Where is the variable actually declared?",
-        tags: "hoisting,var,scope,undefined"
+        explanation: "Variable Declaration Error - Assigning to a variable without declaring it (no var/let/const) in strict mode or function scope causes ReferenceError. Always declare variables before use.",
+        hints: "What happens when you use a variable without declaring it? How does this differ from var hoisting?",
+        tags: "hoisting,var,scope,undefined,reference-error"
       },
       {
         title: "This Binding Issue",
@@ -1787,48 +1808,40 @@ I'm not hoisted!`,
       },
       {
         title: "Event Loop and SetTimeout",
-        description: "This code demonstrates misunderstanding of the event loop.",
+        description: "This code tries to make setTimeout work synchronously.",
         difficulty: "medium",
         language: "javascript",
-        buggy_code: `console.log("Start");
+        buggy_code: `let result = null;
+
+console.log("Start");
 
 setTimeout(() => {
-    console.log("Timeout 1");
+    result = "Data loaded";
 }, 0);
+
+// Try to use result immediately - but it's still null!
+console.log("Result:", result);
+console.log("End");`,
+        fixed_code: `let result = null;
+
+console.log("Start");
 
 setTimeout(() => {
-    console.log("Timeout 2");
+    result = "Data loaded";
+    console.log("Result:", result);  // Use result in callback
+    console.log("End");  // Continue execution here
 }, 0);
 
-console.log("End");
-
-// Expected: Start, Timeout 1, Timeout 2, End
-// Actual: ?`,
-        fixed_code: `console.log("Start");
-
-setTimeout(() => {
-    console.log("Timeout 1");
-}, 0);
-
-setTimeout(() => {
-    console.log("Timeout 2");
-}, 0);
-
-console.log("End");
-
-// Actual output: Start, End, Timeout 1, Timeout 2
-// Even with 0ms delay, setTimeout goes to event queue`,
+// Can't use result here - it's still null`,
         console_output: `Start
-End
-Timeout 1
-Timeout 2`,
+Result: null
+End`,
         expected_output: `Start
-End
-Timeout 1
-Timeout 2`,
-        explanation: "Event Loop Misunderstanding - setTimeout always goes to the event queue, even with 0ms delay. Synchronous code runs first.",
-        hints: "How does the JavaScript event loop work? When do setTimeout callbacks execute?",
-        tags: "event-loop,setTimeout,asynchronous,timing"
+Result: Data loaded
+End`,
+        explanation: "Event Loop Async Error - setTimeout callbacks execute after current code finishes, even with 0ms delay. You cannot use setTimeout's result synchronously. Use callbacks, promises, or async/await instead.",
+        hints: "When does a setTimeout callback actually execute? Can you access its result immediately after calling setTimeout?",
+        tags: "event-loop,setTimeout,asynchronous,timing,callbacks"
       },
       {
         title: "Object Mutation in Functions",
