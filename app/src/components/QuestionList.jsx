@@ -107,11 +107,7 @@ export default function QuestionList({ questionService }) {
               <div className="language-header" style={{
                 borderBottom: '2px solid var(--border-primary)',
                 paddingBottom: '8px',
-                marginBottom: '12px',
-                position: 'sticky',
-                top: 0,
-                background: 'var(--bg-primary)',
-                zIndex: 10
+                marginBottom: '12px'
               }}>
                 <div className="flex items-center gap-2" style={{ justifyContent: 'center' }}>
                   {getLanguageIcon(language)}
@@ -196,7 +192,6 @@ export default function QuestionList({ questionService }) {
                                 padding: '2px 5px',
                                 backgroundColor: 'var(--bg-tertiary)',
                                 color: 'var(--text-muted)',
-                                border: '1px solid var(--border-secondary)',
                                 textTransform: 'uppercase'
                               }}
                             >
@@ -214,8 +209,7 @@ export default function QuestionList({ questionService }) {
                           gap: '8px',
                           fontSize: '10px',
                           color: 'var(--text-muted)',
-                          paddingTop: '4px',
-                          borderTop: '1px solid var(--border-secondary)'
+                          paddingTop: '4px'
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                             <Target size={11} />
