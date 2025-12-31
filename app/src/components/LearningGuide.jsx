@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronDown, ChevronRight, Lightbulb, Target, Search, Wrench, Brain, BookOpen } from 'lucide-react'
+import { Lightbulb, Target, Search, Wrench, Brain, BookOpen } from 'lucide-react'
 import DebugChecklist from './DebugChecklist'
 
 const debuggingContent = {
@@ -472,183 +472,230 @@ Stack traces tell the story of how your program got into trouble.
 
 export default function LearningGuide() {
   const [activeSection, setActiveSection] = useState("methodology")
-  const [expandedSubsections, setExpandedSubsections] = useState({})
-
-  const toggleSubsection = (sectionKey, subsectionIndex) => {
-    const key = `${sectionKey}-${subsectionIndex}`
-    setExpandedSubsections(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }))
-  }
 
   const formatContent = (text) => {
     return text.split('\n').map((line, index) => {
-      if (line.trim() === '') return <br key={index} />
-      
+      if (line.trim() === '') return <div key={index} style={{ height: '8px' }} />
+
       // Handle bold text
       if (line.includes('**')) {
         const parts = line.split('**')
         return (
-          <div key={index} className="mb-2">
-            {parts.map((part, i) => 
-              i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+          <div key={index} style={{ marginBottom: '12px', fontSize: '13px', lineHeight: '1.6' }}>
+            {parts.map((part, i) =>
+              i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong> : <span style={{ color: 'var(--text-secondary)' }}>{part}</span>
             )}
           </div>
         )
       }
-      
+
       // Handle bullet points
       if (line.trim().startsWith('•')) {
         return (
-          <div key={index} className="mb-1 ml-4" style={{ color: 'var(--text-secondary)' }}>
-            <span style={{ color: 'var(--accent-primary)', marginRight: '8px' }}>▶</span>
-            {line.trim().substring(1).trim()}
+          <div key={index} style={{
+            marginBottom: '8px',
+            marginLeft: '20px',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'flex-start'
+          }}>
+            <span style={{ color: 'var(--accent-green)', fontSize: '12px', flexShrink: 0, marginTop: '2px' }}>■</span>
+            <span style={{ color: 'var(--text-secondary)', flex: 1 }}>{line.trim().substring(1).trim()}</span>
           </div>
         )
       }
-      
+
       // Handle numbered lists
       if (/^\d+\./.test(line.trim())) {
         return (
-          <div key={index} className="mb-1 ml-4" style={{ color: 'var(--text-secondary)' }}>
-            <span style={{ color: 'var(--accent-secondary)', marginRight: '8px' }}>
+          <div key={index} style={{
+            marginBottom: '8px',
+            marginLeft: '20px',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'flex-start'
+          }}>
+            <span style={{
+              color: 'var(--accent-green)',
+              fontWeight: 700,
+              flexShrink: 0,
+              minWidth: '20px'
+            }}>
               {line.trim().match(/^\d+/)[0]}.
             </span>
-            {line.trim().replace(/^\d+\.\s*/, '')}
+            <span style={{ color: 'var(--text-secondary)', flex: 1 }}>
+              {line.trim().replace(/^\d+\.\s*/, '')}
+            </span>
           </div>
         )
       }
-      
-      return <div key={index} className="mb-2">{line}</div>
+
+      return <div key={index} style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>{line}</div>
     })
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="brutal-header">Learn</h1>
-        <p className="text-secondary">Master the art and science of debugging with systematic approaches and proven methodologies.</p>
+    <div className="learning-guide-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+        <h1 className="brutal-header" style={{ marginBottom: '8px' }}>DEBUGGING GUIDE</h1>
+        <p className="text-secondary" style={{ fontSize: '13px' }}>Master debugging with systematic approaches and proven methodologies</p>
       </div>
 
-      <div className="grid grid-2 gap-6">
-        {/* Navigation Sidebar */}
-        <div className="brutal-card" style={{ height: 'fit-content' }}>
-          <h2 className="brutal-subheader mb-4">LEARNING MODULES</h2>
-          
-          {Object.entries(debuggingContent).map(([key, section]) => {
-            const Icon = section.icon
-            return (
-              <button
-                key={key}
-                className={`brutal-button w-full mb-2 ${activeSection === key ? 'primary' : ''}`}
-                onClick={() => setActiveSection(key)}
-                style={{ justifyContent: 'flex-start' }}
-              >
-                <Icon size={16} style={{ marginRight: '12px' }} />
-                {section.title}
-              </button>
-            )
-          })}
+      {/* Tab Navigation */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        borderBottom: '2px solid var(--border-primary)',
+        paddingBottom: '8px'
+      }}>
+        {Object.entries(debuggingContent).map(([key, section]) => {
+          const Icon = section.icon
+          const isActive = activeSection === key
+          return (
+            <button
+              key={key}
+              className={`brutal-button ${isActive ? 'primary' : ''}`}
+              onClick={() => setActiveSection(key)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Icon size={14} />
+              <span style={{ textTransform: 'uppercase' }}>{section.title.replace(/^(The |Quick |Advanced |Common |Mental |Debugging )/, '')}</span>
+            </button>
+          )
+        })}
+      </div>
 
-          <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-            <h3 className="font-bold mb-2">Pro Tip</h3>
-            <p className="text-sm text-secondary">
-              The best debuggers aren't born, they're made through practice and systematic thinking.
-              Apply these concepts to the debugging challenges in this app!
-            </p>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="brutal-card">
-          {debuggingContent[activeSection] && (
-            <>
-              <div className="flex items-center gap-3 mb-6">
-                {React.createElement(debuggingContent[activeSection].icon, { 
-                  size: 32, 
-                  color: 'var(--accent-primary)' 
-                })}
-                <h2 className="brutal-subheader">{debuggingContent[activeSection].title}</h2>
+      {/* Content Area */}
+      <div>
+        {debuggingContent[activeSection] && (
+          <>
+            {/* Section Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '24px',
+              padding: '16px',
+              border: '2px solid var(--border-primary)',
+              background: 'var(--bg-secondary)'
+            }}>
+              {React.createElement(debuggingContent[activeSection].icon, {
+                size: 28,
+                color: 'var(--text-primary)'
+              })}
+              <div>
+                <h2 className="brutal-subheader" style={{ margin: 0, fontSize: '1.3rem' }}>
+                  {debuggingContent[activeSection].title}
+                </h2>
               </div>
+            </div>
 
-              <div className="space-y-4">
-                {debuggingContent[activeSection].sections.map((subsection, index) => {
-                  const isExpanded = expandedSubsections[`${activeSection}-${index}`]
-                  
-                  return (
-                    <div key={index} className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                      <button
-                        className="w-full flex items-center justify-between p-0 bg-transparent border-none"
-                        onClick={() => toggleSubsection(activeSection, index)}
-                        style={{ color: 'inherit', cursor: 'pointer' }}
-                      >
-                        <h3 className="brutal-subheader on-dark" style={{ 
-                          fontSize: '1.1rem', 
-                          marginBottom: 0
-                        }}>
-                          {subsection.title}
-                        </h3>
-                        {isExpanded ? 
-                          <ChevronDown size={20} color="var(--accent-primary)" /> : 
-                          <ChevronRight size={20} color="var(--text-muted)" />
-                        }
-                      </button>
-                      
-                      {isExpanded && (
-                        <div className="mt-4" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px' }}>
-                          {formatContent(subsection.content)}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Interactive Elements */}
-              {activeSection === 'methodology' && (
-                <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <h3 className="brutal-subheader mb-4">PRACTICE EXERCISE</h3>
-                  <p className="text-secondary mb-4">
-                    Next time you encounter a bug, try following the DEBUG.EXE methodology step by step. 
-                    Write down your observations and hypotheses before touching any code.
-                  </p>
-                  <div className="flex gap-2">
-                    <button className="brutal-button primary" onClick={() => window.open('/', '_blank')}>
-                      PRACTICE ON CHALLENGES
-                    </button>
+            {/* Sections Grid */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px'
+            }}>
+              {debuggingContent[activeSection].sections.map((subsection, index) => (
+                <div
+                  key={index}
+                  style={{
+                    border: '1px solid var(--border-primary)',
+                    background: 'var(--bg-primary)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  className="learning-card"
+                >
+                  {/* Card Header */}
+                  <div style={{
+                    padding: '16px 20px',
+                    background: 'var(--bg-secondary)',
+                    borderBottom: '2px solid var(--border-primary)'
+                  }}>
+                    <h3 style={{
+                      fontSize: '15px',
+                      fontWeight: 700,
+                      margin: 0,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: 'var(--text-primary)'
+                    }}>
+                      {subsection.title}
+                    </h3>
                   </div>
+
+                  {/* Card Content */}
+                  <div style={{
+                    padding: '20px',
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '13px',
+                    lineHeight: '1.8',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    {formatContent(subsection.content)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Tips/Interactive */}
+            <div style={{ marginTop: '24px' }}>
+              {activeSection === 'methodology' && (
+                <div style={{
+                  border: '1px solid var(--accent-green)',
+                  background: 'rgba(0, 255, 0, 0.05)',
+                  padding: '16px'
+                }}>
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase' }}>💡 Practice Exercise</h3>
+                  <p style={{ fontSize: '12px', lineHeight: '1.5', marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                    Try following the DEBUG.EXE methodology step by step on your next bug.
+                  </p>
+                  <button className="brutal-button primary" onClick={() => window.location.href = '/'} style={{ fontSize: '11px', padding: '6px 12px' }}>
+                    START CHALLENGES
+                  </button>
                 </div>
               )}
 
               {activeSection === 'workflows' && (
-                <div className="mt-6">
-                  <DebugChecklist onComplete={() => {
-                    // Could add achievement tracking here
-                  }} />
+                <div style={{ marginTop: '16px' }}>
+                  <DebugChecklist onComplete={() => {}} />
                 </div>
               )}
 
               {activeSection === 'tools' && (
-                <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <h3 className="brutal-subheader mb-4">TOOL CHECKLIST</h3>
-                  <div className="grid grid-2 gap-4">
+                <div style={{
+                  border: '1px solid var(--border-primary)',
+                  background: 'var(--bg-secondary)',
+                  padding: '16px'
+                }}>
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px', textTransform: 'uppercase' }}>🛠️ Tool Checklist</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                     <div>
-                      <h4 className="font-bold mb-2">Essential Tools:</h4>
-                      <div className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                        <div>- Browser DevTools</div>
-                        <div>- IDE Debugger</div>
-                        <div>- Version Control (Git)</div>
-                        <div>- Logging Framework</div>
+                      <h4 style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>Essential:</h4>
+                      <div style={{ fontSize: '11px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                        <div>→ Browser DevTools</div>
+                        <div>→ IDE Debugger</div>
+                        <div>→ Version Control</div>
+                        <div>→ Logging Framework</div>
                       </div>
                     </div>
                     <div>
-                      <h4 className="font-bold mb-2">Advanced Tools:</h4>
-                      <div className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                        <div>- Static Analysis</div>
-                        <div>- Memory Profiler</div>
-                        <div>- Network Monitor</div>
-                        <div>- Error Tracking</div>
+                      <h4 style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>Advanced:</h4>
+                      <div style={{ fontSize: '11px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                        <div>→ Static Analysis</div>
+                        <div>→ Memory Profiler</div>
+                        <div>→ Network Monitor</div>
+                        <div>→ Error Tracking</div>
                       </div>
                     </div>
                   </div>
@@ -656,31 +703,20 @@ export default function LearningGuide() {
               )}
 
               {activeSection === 'reference' && (
-                <div className="brutal-card mt-6" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <h3 className="brutal-subheader mb-4">QUICK ACCESS</h3>
-                  <p className="text-secondary mb-4">
-                    Bookmark this section for quick reference during debugging sessions. 
-                    Print out the cheat sheet and keep it near your workspace!
+                <div style={{
+                  border: '1px solid var(--border-primary)',
+                  background: 'var(--bg-secondary)',
+                  padding: '16px'
+                }}>
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase' }}>📌 Quick Access</h3>
+                  <p style={{ fontSize: '11px', lineHeight: '1.5', marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                    Bookmark this for quick reference during debugging sessions!
                   </p>
-                  <div className="grid grid-3 gap-4">
-                    <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', textAlign: 'center' }}>
-                      <h4 className="font-bold mb-2" style={{ color: 'var(--accent-primary)' }}>ERROR PATTERNS</h4>
-                      <p className="text-xs">Common bugs by language</p>
-                    </div>
-                    <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', textAlign: 'center' }}>
-                      <h4 className="font-bold mb-2" style={{ color: 'var(--accent-secondary)' }}>COMMANDS</h4>
-                      <p className="text-xs">Debugger shortcuts</p>
-                    </div>
-                    <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', textAlign: 'center' }}>
-                      <h4 className="font-bold mb-2" style={{ color: '#ffaa00' }}>DIAGNOSIS</h4>
-                      <p className="text-xs">Quick questions to ask</p>
-                    </div>
-                  </div>
                 </div>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

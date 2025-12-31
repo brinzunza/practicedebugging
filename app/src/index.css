@@ -635,3 +635,64 @@ body {
     gap: 8px !important;
   }
 }
+
+/* Learning Guide Styles */
+.learning-guide-container {
+  padding: 20px;
+}
+
+.learning-card {
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.learning-card:hover {
+  border-color: var(--accent-green) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.learning-card > div:first-child {
+  position: relative;
+}
+
+.learning-card > div:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent-green);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.learning-card:hover > div:first-child::before {
+  opacity: 1;
+}
+
+/* Learning Guide Responsive */
+@media (max-width: 768px) {
+  .learning-guide-container {
+    padding: 16px;
+  }
+
+  .learning-guide-container > div:first-child {
+    margin-bottom: 16px;
+  }
+
+  .learning-guide-container > div:nth-child(2) {
+    flex-wrap: wrap;
+    justify-content: flex-start !important;
+  }
+
+  .learning-guide-container .brutal-button {
+    font-size: 10px !important;
+    padding: 5px 10px !important;
+  }
+
+  .learning-guide-container > div:nth-child(3) > div > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
