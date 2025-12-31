@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock, Target, CheckCircle, Circle, AlertCircle } from 'lucide-react'
+import { Clock, Target, CheckCircle, Circle, AlertCircle, Code2 } from 'lucide-react'
 
 export default function QuestionList({ questionService }) {
   const [questions, setQuestions] = useState([])
@@ -22,6 +22,16 @@ export default function QuestionList({ questionService }) {
     return q.difficulty === filter
   })
 
+  // Group questions by language
+  const questionsByLanguage = filteredQuestions.reduce((acc, question) => {
+    const lang = question.language || 'other'
+    if (!acc[lang]) {
+      acc[lang] = []
+    }
+    acc[lang].push(question)
+    return acc
+  }, {})
+
   const getDifficultyClass = (difficulty) => {
     switch (difficulty) {
       case 'easy': return 'difficulty-easy'
@@ -33,50 +43,54 @@ export default function QuestionList({ questionService }) {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'solved': return <CheckCircle size={20} color="var(--accent-secondary)" />
-      case 'in_progress': return <AlertCircle size={20} color="#ffaa00" />
-      default: return <Circle size={20} color="var(--text-muted)" />
+      case 'solved': return <CheckCircle size={16} color="var(--accent-secondary)" />
+      case 'in_progress': return <AlertCircle size={16} color="#ffaa00" />
+      default: return <Circle size={16} color="var(--text-muted)" />
     }
   }
 
+  const getLanguageIcon = (language) => {
+    return <Code2 size={18} />
+  }
+
   return (
-    <div>
+    <div className="question-list-container">
       <div className="mb-8">
         <h1 className="brutal-header">DEBUG CHALLENGES</h1>
         <p className="text-secondary mb-4">Find and fix bugs in broken code. Test your debugging skills.</p>
-        
-        <div className="flex gap-2 mb-4">
-          <button 
+
+        <div className="flex gap-2 mb-4" style={{ flexWrap: 'wrap' }}>
+          <button
             className={`brutal-button ${filter === 'all' ? 'primary' : ''}`}
             onClick={() => setFilter('all')}
           >
             ALL ({questions.length})
           </button>
-          <button 
+          <button
             className={`brutal-button ${filter === 'solved' ? 'secondary' : ''}`}
             onClick={() => setFilter('solved')}
           >
             SOLVED ({questions.filter(q => q.status === 'solved').length})
           </button>
-          <button 
+          <button
             className={`brutal-button ${filter === 'unsolved' ? '' : ''}`}
             onClick={() => setFilter('unsolved')}
           >
             UNSOLVED ({questions.filter(q => !q.status || q.status !== 'solved').length})
           </button>
-          <button 
+          <button
             className={`brutal-button ${filter === 'easy' ? '' : ''}`}
             onClick={() => setFilter('easy')}
           >
             EASY
           </button>
-          <button 
+          <button
             className={`brutal-button ${filter === 'medium' ? '' : ''}`}
             onClick={() => setFilter('medium')}
           >
             MEDIUM
           </button>
-          <button 
+          <button
             className={`brutal-button ${filter === 'hard' ? '' : ''}`}
             onClick={() => setFilter('hard')}
           >
@@ -85,78 +99,148 @@ export default function QuestionList({ questionService }) {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {filteredQuestions.map(question => (
-          <Link 
-            key={question.id} 
-            to={`/question/${question.id}`}
-            style={{ textDecoration: 'none', color: 'inherit' }}
-          >
-            <div className="brutal-card" style={{ cursor: 'pointer', transition: 'transform 0.1s' }}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-4">
-                  {getStatusIcon(question.status)}
-                  <div>
-                    <h3 className="brutal-subheader" style={{ marginBottom: '8px' }}>
-                      {question.title}
-                    </h3>
-                    <p className="text-secondary">Debug Challenge - Find and fix the hidden bug!</p>
-                  </div>
+      {filteredQuestions.length > 0 ? (
+        <div className="language-columns">
+          {Object.keys(questionsByLanguage).sort().map((language) => (
+            <div key={language} className="language-column">
+              {/* Language Header */}
+              <div className="language-header" style={{
+                borderBottom: '2px solid var(--border-primary)',
+                paddingBottom: '8px',
+                marginBottom: '12px',
+                position: 'sticky',
+                top: 0,
+                background: 'var(--bg-primary)',
+                zIndex: 10
+              }}>
+                <div className="flex items-center gap-2" style={{ justifyContent: 'center' }}>
+                  {getLanguageIcon(language)}
+                  <h2 className="brutal-subheader" style={{
+                    margin: 0,
+                    fontSize: '1rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {language.toUpperCase()}
+                  </h2>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <span className={`difficulty-badge ${getDifficultyClass(question.difficulty)}`}>
-                    {question.difficulty}
-                  </span>
-                  <span className="brutal-button" style={{ fontSize: '11px', padding: '4px 10px', background: 'var(--bg-tertiary)' }}>
-                    {question.language.toUpperCase()}
-                  </span>
+                <div style={{
+                  textAlign: 'center',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500,
+                  marginTop: '4px'
+                }}>
+                  {questionsByLanguage[language].length} {questionsByLanguage[language].length === 1 ? 'problem' : 'problems'}
                 </div>
               </div>
 
-              {question.attempts > 0 && (
-                <div className="flex items-center gap-4 text-muted" style={{ fontSize: '14px' }}>
-                  <div className="flex items-center gap-1">
-                    <Target size={16} />
-                    {question.attempts} attempts
-                  </div>
-                  {question.time_spent > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Clock size={16} />
-                      {Math.floor(question.time_spent / 60)}m {question.time_spent % 60}s
+              {/* Questions List */}
+              <div className="questions-list">
+                {questionsByLanguage[language].map((question) => (
+                  <Link
+                    key={question.id}
+                    to={`/question/${question.id}`}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <div className="compact-question-card" style={{
+                      border: '1px solid var(--border-primary)',
+                      padding: '10px 12px',
+                      marginBottom: '8px',
+                      transition: 'all 0.15s ease',
+                      cursor: 'pointer',
+                      background: 'var(--bg-primary)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      {/* Top Row: Status and Difficulty */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div style={{ flexShrink: 0 }}>
+                          {getStatusIcon(question.status)}
+                        </div>
+                        <span className={`difficulty-badge ${getDifficultyClass(question.difficulty)}`} style={{
+                          padding: '3px 8px',
+                          fontSize: '9px',
+                          textTransform: 'uppercase',
+                          fontWeight: 600
+                        }}>
+                          {question.difficulty}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 style={{
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        margin: 0,
+                        lineHeight: '1.3',
+                        textTransform: 'none',
+                        letterSpacing: 'normal'
+                      }}>
+                        {question.title}
+                      </h3>
+
+                      {/* Tags */}
+                      {question.tags && (
+                        <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                          {question.tags.split(',').slice(0, 2).map((tag, index) => (
+                            <span
+                              key={index}
+                              style={{
+                                fontSize: '8px',
+                                padding: '2px 5px',
+                                backgroundColor: 'var(--bg-tertiary)',
+                                color: 'var(--text-muted)',
+                                border: '1px solid var(--border-secondary)',
+                                textTransform: 'uppercase'
+                              }}
+                            >
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Stats */}
+                      {question.attempts > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '10px',
+                          color: 'var(--text-muted)',
+                          paddingTop: '4px',
+                          borderTop: '1px solid var(--border-secondary)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Target size={11} />
+                            {question.attempts}
+                          </div>
+                          {question.time_spent > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <Clock size={11} />
+                              {Math.floor(question.time_spent / 60)}m
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
-
-              {question.tags && (
-                <div className="flex gap-2 mt-4">
-                  {question.tags.split(',').map((tag, index) => (
-                    <span 
-                      key={index}
-                      className="brutal-button"
-                      style={{ 
-                        fontSize: '10px', 
-                        padding: '4px 8px',
-                        backgroundColor: 'var(--bg-tertiary)',
-                        color: 'var(--text-muted)'
-                      }}
-                    >
-                      {tag.trim()}
-                    </span>
-                  ))}
-                </div>
-              )}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </Link>
-        ))}
-      </div>
-
-      {filteredQuestions.length === 0 && (
+          ))}
+        </div>
+      ) : (
         <div className="brutal-card text-center">
           <h3 className="brutal-subheader">NO QUESTIONS FOUND</h3>
           <p className="text-secondary mb-4">No questions match your current filter.</p>
-          <button 
+          <button
             className="brutal-button primary"
             onClick={() => setFilter('all')}
           >
