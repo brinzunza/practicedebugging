@@ -212,325 +212,191 @@ export default function QuestionWorkspace({ questionService }) {
   }
 
   return (
-    <div>
-      <div className="mb-4">
-        <button className="brutal-button" onClick={() => navigate('/')}>
-          <ArrowLeft size={16} style={{ marginRight: '8px' }} />
-          BACK TO QUESTIONS
+    <div className="workspace-container" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Top Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+        <button className="brutal-button" onClick={() => navigate('/')} style={{ padding: '6px 12px', fontSize: '12px' }}>
+          <ArrowLeft size={14} style={{ marginRight: '6px' }} />
+          BACK
         </button>
+
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <h1 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>{question.title}</h1>
+          <span className={`difficulty-badge difficulty-${question.difficulty}`} style={{ padding: '4px 10px', fontSize: '10px' }}>
+            {question.difficulty}
+          </span>
+          <span style={{ fontSize: '10px', padding: '4px 8px', border: '1px solid var(--border-primary)' }}>
+            {question.language.toUpperCase()}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            className={`brutal-button ${showHints ? 'secondary' : ''}`}
+            onClick={() => setShowHints(!showHints)}
+            style={{ padding: '6px 10px', fontSize: '11px' }}
+          >
+            <Lightbulb size={14} />
+          </button>
+          <button
+            className={`brutal-button ${showSolution ? 'secondary' : ''}`}
+            onClick={() => setShowSolution(!showSolution)}
+            style={{ padding: '6px 10px', fontSize: '11px' }}
+          >
+            {showSolution ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+        </div>
       </div>
 
-      <div>
-        {/* Question Description Section */}
-        <div>
-          <div className="brutal-card" style={{ marginBottom: '8px', padding: '16px' }}>
-            <div className="flex justify-between items-start mb-4">
-              <h1 className="brutal-subheader">{question.title}</h1>
-              <div className="flex gap-2">
-                <span 
-                  className="brutal-button" 
-                  style={{ 
-                    backgroundColor: question.difficulty === 'easy' ? 'var(--accent-green)' :
-                                   question.difficulty === 'medium' ? 'orange' : 'red',
-                    color: 'black',
-                    fontSize: '12px',
-                    padding: '6px 12px'
-                  }}
-                >
-                  {question.difficulty.toUpperCase()}
-                </span>
-                <span className="brutal-button" style={{ fontSize: '12px', padding: '6px 12px' }}>
-                  {question.language.toUpperCase()}
-                </span>
-              </div>
-            </div>
+      {/* Main Content Area */}
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '12px', flex: 1, minHeight: 0 }}>
+        {/* Left Sidebar - Problem Info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'auto', border: '1px solid var(--border-primary)', padding: '12px', background: 'var(--bg-primary)' }}>
+          <div>
+            <h3 style={{ fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Problem
+            </h3>
+            <p style={{ fontSize: '11px', lineHeight: '1.4', margin: 0, color: 'var(--text-secondary)' }}>{question.description}</p>
+          </div>
 
-            <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', marginBottom: '12px' }}>
-              <h3 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
-                PROBLEM DESCRIPTION
+          {question.expected_output && (
+            <div>
+              <h3 style={{ fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Expected Output
               </h3>
-              <p className="text-secondary mb-4" style={{ fontSize: '13px' }}>{question.description}</p>
-
-              {question.table_schema && (
-                <div className="mb-4">
-                  <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
-                    DATABASE SCHEMA
-                  </h4>
-                  <div
-                    className="brutal-card"
-                    style={{
-                      backgroundColor: 'var(--bg-primary)',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: '12px',
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'pre-wrap',
-                      minHeight: '120px',
-                      border: '1px solid var(--text-muted)',
-                      marginBottom: '12px'
-                    }}
-                  >
-                    {question.table_schema}
-                  </div>
-                </div>
-              )}
-
-              {question.expected_output && (
-                <div className="mt-4">
-                  <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
-                    EXPECTED OUTPUT
-                  </h4>
-                  <div
-                    className="brutal-card"
-                    style={{
-                      backgroundColor: 'var(--bg-primary)',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: '13px',
-                      color: 'var(--accent-green)',
-                      whiteSpace: 'pre-wrap',
-                      minHeight: '60px',
-                      border: '1px solid var(--accent-green)',
-                      marginBottom: '12px'
-                    }}
-                  >
-                    {question.expected_output}
-                  </div>
-                  <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
-                    Your task: Fix the code so it produces this exact output
-                  </p>
-                </div>
-              )}
-
-            </div>
-
-            {/* Output and Test Status Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', marginBottom: '12px', alignItems: 'stretch' }}>
-              {/* Console Output - Left Side */}
-              <div
-                className="brutal-card"
-                style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  padding: '12px',
-                  margin: '0',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}
-              >
-                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
-                  OUTPUT
-                </h4>
-                <div
-                  style={{
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: '13px',
-                    minHeight: '80px',
-                    maxHeight: '200px',
-                    color: consoleOutput.includes('Error') || consoleOutput.includes('Exception')
-                      ? 'var(--accent-red)' : 'var(--accent-green)',
-                    whiteSpace: 'pre-wrap',
-                    wordWrap: 'break-word',
-                    overflow: 'auto',
-                    padding: '8px',
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-primary)'
-                  }}
-                >
-                  {consoleOutput || (
-                    <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      Run or check your code to see output...
-                    </div>
-                  )}
-                </div>
-
-                {feedback && (
-                  <div
-                    style={{
-                      marginTop: '12px',
-                      padding: '8px',
-                      backgroundColor: feedback.type === 'success' ? 'rgba(0, 255, 0, 0.1)' :
-                                     feedback.type === 'info' ? 'rgba(0, 123, 255, 0.1)' : 'rgba(255, 0, 0, 0.1)',
-                      border: `1px solid ${feedback.type === 'success' ? 'var(--accent-green)' :
-                              feedback.type === 'info' ? '#007bff' : 'var(--accent-red)'}`
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {feedback.type === 'success' ? (
-                        <CheckCircle size={16} color="var(--accent-green)" />
-                      ) : feedback.type === 'info' ? (
-                        <Play size={16} color="#007bff" />
-                      ) : (
-                        <XCircle size={16} color="var(--accent-red)" />
-                      )}
-                      <p style={{ margin: 0, fontSize: '12px', whiteSpace: 'pre-line' }}>
-                        {feedback.message}
-                      </p>
-                    </div>
-                  </div>
-                )}
+              <div style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '10px',
+                color: 'var(--accent-green)',
+                whiteSpace: 'pre-wrap',
+                padding: '6px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--accent-green)'
+              }}>
+                {question.expected_output}
               </div>
-
-              {/* Test Status - Right Side */}
-              <TestStatusIndicator
-                soundnessStatus={soundnessStatus}
-                correctionStatus={correctionStatus}
-              />
             </div>
+          )}
 
-            <div className="flex gap-2 mb-4">
-              <button
-                className={`brutal-button ${showHints ? 'primary' : ''}`}
-                onClick={() => setShowHints(!showHints)}
-              >
-                <Lightbulb size={16} style={{ marginRight: '8px' }} />
-                {showHints ? 'HIDE HINTS' : 'SHOW HINTS'}
-              </button>
-              <button 
-                className={`brutal-button ${showSolution ? 'secondary' : ''}`}
-                onClick={() => setShowSolution(!showSolution)}
-              >
-                {showSolution ? <EyeOff size={16} /> : <Eye size={16} />}
-                <span style={{ marginLeft: '8px' }}>
-                  {showSolution ? 'HIDE SOLUTION' : 'SHOW SOLUTION'}
-                </span>
-              </button>
-            </div>
-
-            {showHints && question.hints && (
-              <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', marginBottom: '12px' }}>
-                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
-                  HINTS
-                </h4>
-                <p className="text-secondary" style={{ fontSize: '13px' }}>{question.hints}</p>
+          {question.table_schema && (
+            <div>
+              <h3 style={{ fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Schema
+              </h3>
+              <div style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '10px',
+                whiteSpace: 'pre-wrap',
+                padding: '6px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)'
+              }}>
+                {question.table_schema}
               </div>
-            )}
+            </div>
+          )}
 
-            {showSolution && (
-              <div className="brutal-card" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', marginBottom: '12px' }}>
-                <h4 className="brutal-subheader" style={{ fontSize: '0.9rem', marginBottom: '6px' }}>
-                  SOLUTION EXPLANATION
-                </h4>
-                <p className="text-secondary" style={{ fontSize: '13px', marginBottom: '12px' }}>{question.explanation}</p>
-                
-                <div className="mb-4">
-                  <h5 className="font-bold mb-2">FIXED CODE:</h5>
-                  <div style={{ border: '2px solid var(--text-primary)', borderRadius: '4px' }}>
-                    <Editor
-                      height="200px"
-                      language={question.language}
-                      value={question.fixed_code}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        fontFamily: 'JetBrains Mono, Courier New, monospace',
-                        theme: 'brutal-dark'
-                      }}
-                      onMount={handleEditorDidMount}
-                    />
-                  </div>
-                </div>
+          <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '8px', marginTop: 'auto' }}>
+            <h3 style={{ fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Output
+            </h3>
+            <div style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '10px',
+              minHeight: '60px',
+              maxHeight: '120px',
+              color: consoleOutput.includes('Error') || consoleOutput.includes('Exception') ? 'var(--accent-red)' : 'var(--accent-green)',
+              whiteSpace: 'pre-wrap',
+              overflow: 'auto',
+              padding: '6px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-primary)'
+            }}>
+              {consoleOutput || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Run code...</span>}
+            </div>
 
-                {question.expected_output && (
-                  <div>
-                    <h5 className="font-bold mb-2">EXPECTED OUTPUT:</h5>
-                    <div 
-                      className="brutal-card"
-                      style={{ 
-                        backgroundColor: 'var(--bg-primary)',
-                        fontFamily: 'JetBrains Mono, monospace',
-                        fontSize: '13px',
-                        color: 'var(--accent-green)',
-                        whiteSpace: 'pre-wrap',
-                        minHeight: '60px',
-                        border: '1px solid var(--accent-green)'
-                      }}
-                    >
-                      {question.expected_output}
-                    </div>
-                    <div className="mt-3">
-                      {question.output_explanation ? (
-                        <div className="brutal-card" style={{ backgroundColor: 'var(--bg-secondary)', padding: '12px' }}>
-                          <p className="text-sm text-primary" style={{ margin: 0 }}>
-                            <strong>Expected Output Explanation:</strong> {question.output_explanation}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-secondary" style={{ fontStyle: 'italic' }}>
-                          ↗ This is what the code should output when the bug is fixed. 
-                          Compare this with what you see when running the buggy code to understand the issue.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+            <TestStatusIndicator
+              soundnessStatus={soundnessStatus}
+              correctionStatus={correctionStatus}
+            />
+
+            {feedback && (
+              <div style={{
+                marginTop: '8px',
+                padding: '6px',
+                fontSize: '10px',
+                backgroundColor: feedback.type === 'success' ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+                border: `1px solid ${feedback.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)'}`
+              }}>
+                {feedback.type === 'success' ? <CheckCircle size={12} color="var(--accent-green)" /> : <XCircle size={12} color="var(--accent-red)" />}
+                <span style={{ marginLeft: '6px' }}>{feedback.message}</span>
               </div>
             )}
           </div>
+
+          {showHints && question.hints && (
+            <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '8px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Hints
+              </h3>
+              <p style={{ fontSize: '10px', lineHeight: '1.4', margin: 0, color: 'var(--text-secondary)' }}>{question.hints}</p>
+            </div>
+          )}
+
+          {showSolution && (
+            <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '8px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Solution
+              </h3>
+              <p style={{ fontSize: '10px', lineHeight: '1.4', margin: 0, marginBottom: '8px', color: 'var(--text-secondary)' }}>{question.explanation}</p>
+            </div>
+          )}
         </div>
 
-        {/* Code Editor Section */}
-        <div>
-          <div className="brutal-card" style={{ marginTop: '0', marginBottom: '0', padding: '16px' }}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="brutal-subheader">CODE EDITOR</h2>
-              <div className="flex gap-2">
-                <button className="brutal-button" onClick={resetCode}>
-                  RESET
-                </button>
-                <button
-                  className="brutal-button secondary"
-                  onClick={runUserCode}
-                  disabled={isExecuting}
-                >
-                  <Play size={16} style={{ marginRight: '8px' }} />
-                  {isExecuting ? 'EXECUTING...' : 'RUN CODE'}
-                </button>
-                <button className="brutal-button primary" onClick={checkSolution}>
-                  <CheckCircle size={16} style={{ marginRight: '8px' }} />
-                  CHECK SOLUTION
-                </button>
-              </div>
+        {/* Right Side - Code Editor */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--border-primary)' }}>
+          {/* Editor Controls */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Editor</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button className="brutal-button" onClick={resetCode} style={{ padding: '4px 10px', fontSize: '11px' }}>
+                RESET
+              </button>
+              <button
+                className="brutal-button secondary"
+                onClick={runUserCode}
+                disabled={isExecuting}
+                style={{ padding: '4px 10px', fontSize: '11px' }}
+              >
+                <Play size={12} style={{ marginRight: '4px' }} />
+                {isExecuting ? 'RUNNING...' : 'RUN'}
+              </button>
+              <button className="brutal-button primary" onClick={checkSolution} style={{ padding: '4px 10px', fontSize: '11px' }}>
+                <CheckCircle size={12} style={{ marginRight: '4px' }} />
+                CHECK
+              </button>
             </div>
+          </div>
 
-            <div style={{
-              border: '2px solid var(--text-primary)',
-              borderRadius: '4px',
-              marginBottom: '16px'
-            }}>
-              <Editor
-                height="600px"
-                language={question.language}
-                value={userCode}
-                onChange={(value) => setUserCode(value)}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  fontFamily: 'JetBrains Mono, Courier New, monospace',
-                  lineNumbers: 'on',
-                  wordWrap: 'on',
-                  automaticLayout: true,
-                }}
-                onMount={handleEditorDidMount}
-              />
-            </div>
-
-            {question.tags && (
-              <div className="flex gap-2 mt-4">
-                {question.tags.split(',').map((tag, index) => (
-                  <span 
-                    key={index}
-                    className="brutal-button"
-                    style={{ 
-                      fontSize: '10px', 
-                      padding: '4px 8px',
-                      backgroundColor: 'var(--bg-tertiary)',
-                      color: 'var(--text-muted)'
-                    }}
-                  >
-                    {tag.trim()}
-                  </span>
-                ))}
-              </div>
-            )}
+          {/* Monaco Editor */}
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <Editor
+              height="100%"
+              language={question.language}
+              value={userCode}
+              onChange={(value) => setUserCode(value)}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                fontFamily: 'JetBrains Mono, Courier New, monospace',
+                lineNumbers: 'on',
+                wordWrap: 'on',
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                padding: { top: 8, bottom: 8 }
+              }}
+              onMount={handleEditorDidMount}
+            />
           </div>
         </div>
       </div>

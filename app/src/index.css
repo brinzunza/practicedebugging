@@ -530,23 +530,12 @@ body {
   overflow-x: hidden;
   padding: 0 12px 12px 12px;
   scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .questions-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.questions-list::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-.questions-list::-webkit-scrollbar-thumb {
-  background: var(--border-primary);
-  border-radius: 3px;
-}
-
-.questions-list::-webkit-scrollbar-thumb:hover {
-  background: var(--text-primary);
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .compact-question-card:hover {
@@ -598,5 +587,51 @@ body {
 
   .language-header h2 {
     font-size: 0.95rem !important;
+  }
+}
+
+/* Workspace Styles */
+.workspace-container {
+  max-width: 100%;
+}
+
+.workspace-container .difficulty-easy {
+  background: rgba(100, 255, 150, 0.2);
+  border-color: rgba(100, 255, 150, 0.4);
+  color: rgba(100, 255, 150, 0.9);
+}
+
+.workspace-container .difficulty-medium {
+  background: rgba(255, 180, 100, 0.2);
+  border-color: rgba(255, 180, 100, 0.4);
+  color: rgba(255, 180, 100, 0.9);
+}
+
+.workspace-container .difficulty-hard {
+  background: rgba(255, 100, 120, 0.2);
+  border-color: rgba(255, 100, 120, 0.4);
+  color: rgba(255, 100, 120, 0.9);
+}
+
+/* Workspace responsive */
+@media (max-width: 1024px) {
+  .workspace-container > div:nth-child(2) {
+    grid-template-columns: 250px 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace-container {
+    height: auto !important;
+  }
+
+  .workspace-container > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+  }
+
+  .workspace-container > div:nth-child(1) {
+    flex-direction: column !important;
+    gap: 8px !important;
   }
 }
