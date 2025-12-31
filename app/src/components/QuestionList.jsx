@@ -43,14 +43,83 @@ export default function QuestionList({ questionService }) {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'solved': return <CheckCircle size={16} color="var(--accent-secondary)" />
+      case 'solved': return <CheckCircle size={16} color="#00ff00" />
       case 'in_progress': return <AlertCircle size={16} color="#ffaa00" />
       default: return <Circle size={16} color="var(--text-muted)" />
     }
   }
 
+  const getCardStyle = (status) => {
+    const baseStyle = {
+      border: '1px solid var(--border-primary)',
+      padding: '10px 12px',
+      marginBottom: '8px',
+      transition: 'all 0.15s ease',
+      cursor: 'pointer',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px'
+    }
+
+    switch (status) {
+      case 'solved':
+        return {
+          ...baseStyle,
+          background: 'rgba(0, 255, 0, 0.05)',
+          borderLeft: '4px solid #00ff00'
+        }
+      case 'in_progress':
+        return {
+          ...baseStyle,
+          background: 'rgba(255, 170, 0, 0.05)',
+          borderLeft: '4px solid #ffaa00'
+        }
+      default:
+        return {
+          ...baseStyle,
+          background: 'var(--bg-primary)',
+          borderLeft: '4px solid transparent'
+        }
+    }
+  }
+
   const getLanguageIcon = (language) => {
     return <Code2 size={18} />
+  }
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'solved':
+        return (
+          <span style={{
+            fontSize: '8px',
+            padding: '2px 6px',
+            backgroundColor: 'rgba(0, 255, 0, 0.2)',
+            color: '#00ff00',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            borderRadius: '2px'
+          }}>
+            ✓ Solved
+          </span>
+        )
+      case 'in_progress':
+        return (
+          <span style={{
+            fontSize: '8px',
+            padding: '2px 6px',
+            backgroundColor: 'rgba(255, 170, 0, 0.2)',
+            color: '#ffaa00',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            borderRadius: '2px'
+          }}>
+            ⋯ In Progress
+          </span>
+        )
+      default:
+        return null
+    }
   }
 
   return (
@@ -139,25 +208,16 @@ export default function QuestionList({ questionService }) {
                     to={`/question/${question.id}`}
                     style={{ textDecoration: 'none', color: 'inherit' }}
                   >
-                    <div className="compact-question-card" style={{
-                      border: '1px solid var(--border-primary)',
-                      padding: '10px 12px',
-                      marginBottom: '8px',
-                      transition: 'all 0.15s ease',
-                      cursor: 'pointer',
-                      background: 'var(--bg-primary)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px'
-                    }}>
+                    <div className="compact-question-card" style={getCardStyle(question.status)}>
                       {/* Top Row: Status and Difficulty */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between'
                       }}>
-                        <div style={{ flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                           {getStatusIcon(question.status)}
+                          {getStatusBadge(question.status)}
                         </div>
                         <span className={`difficulty-badge ${getDifficultyClass(question.difficulty)}`} style={{
                           padding: '3px 8px',
