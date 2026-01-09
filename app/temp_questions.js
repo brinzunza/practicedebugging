@@ -246,37 +246,6 @@ squares: [0, 1, 4, 9, 16]`,
         tags: "list-comprehension,variable-scope,leaking"
       },
       {
-        title: "Set vs List for Membership",
-        description: "This function is inefficient for large data.",
-        difficulty: "medium",
-        language: "python",
-        buggy_code: `def find_common_items(list1, list2):
-    common = []
-    for item in list1:
-        if item in list2:  # O(n) lookup in list
-            common.append(item)
-    return common
-
-# This becomes slow with large lists
-result = find_common_items(list(range(1000)), list(range(500, 1500)))
-print(len(result))`,
-        fixed_code: `def find_common_items(list1, list2):
-    set2 = set(list2)  # O(1) lookup in set
-    common = []
-    for item in list1:
-        if item in set2:
-            common.append(item)
-    return common
-
-result = find_common_items(list(range(1000)), list(range(500, 1500)))
-print(len(result))`,
-        console_output: `500 (but very slow)`,
-        expected_output: `500 (much faster)`,
-        explanation: "Performance Error - Membership testing in lists is O(n), in sets is O(1). Convert to set for faster lookups.",
-        hints: "What's the time complexity of 'in' operator for lists vs sets? How can you optimize this?",
-        tags: "performance,sets,lists,membership,optimization"
-      },
-      {
         title: "Exception Handling Order",
         description: "This exception handling catches the wrong exceptions.",
         difficulty: "medium",
